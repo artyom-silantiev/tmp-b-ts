@@ -1,0 +1,13 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "target": "es6",
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "lib": [
+      "es2018",
+      "dom"
+    ]
+  }
+}

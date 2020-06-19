@@ -1,0 +1,17 @@
+// seed file: <%= name %>
+<% if (comment) { %>
+// comment: <%= comment %>
+<% } %>
+import * as db from '../../db';
+import * as salthash from '../../lib/salthash';
+
+export async function up () {
+    await db.models.User.getRepository.create({
+        email: 'admin@example.com',
+        role: db.models.User.UserRole.Admin,
+        emailActivatedAt: new Date(),
+        passwordHash: salthash.generateSaltHash('password'),
+        firstName: 'Admin',
+        lastName: 'Power'
+    });
+}
