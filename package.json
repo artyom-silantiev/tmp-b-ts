@@ -1,5 +1,5 @@
 {
-  "name": "tmp-b-ts",
+  "name": "tmp-ts-backend",
   "version": "0.0.0",
   "scripts": {
     "server": "nodemon -r tsconfig-paths/register server.ts",
