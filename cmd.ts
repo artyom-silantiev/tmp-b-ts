@@ -1,4 +1,4 @@
-import argv from './lib/argv';
+import argv from '@/lib/argv';
 
 (async () => {
     let cmd = argv._[0];

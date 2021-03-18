@@ -30,7 +30,7 @@ npx nodemon server.ts
 
 # generate migration
 ```sh
-npx ts-node node_modules/.bin/typeorm migration:generate -n Initial
+npx ts-node -r tsconfig-paths/register node_modules/.bin/typeorm migration:generate -n Initial
 ```
 
 # recreate postgres public schema, only for dev

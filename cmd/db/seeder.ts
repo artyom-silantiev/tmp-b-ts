@@ -1,6 +1,6 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import * as db from '../../db';
+import * as db from '@/db';
 
 export default async function (argv) {
   await db.init();
@@ -20,7 +20,8 @@ export default async function (argv) {
     process.exit(0);
   }
 
-  const seedsDir = path.join(__dirname, '..', '..', 'db', 'seeds');
+  const cwd = process.cwd();
+  const seedsDir = path.join(cwd, 'src', 'db', 'seeds');
 
   if (!fs.existsSync(seedsDir)) {
     await fs.mkdirs(seedsDir);

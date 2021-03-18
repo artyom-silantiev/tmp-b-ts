@@ -1,6 +1,6 @@
 import {
     SendEmailType
-} from './env.types';
+} from './src/env.types';
 
 export default {
     env: 'production', // development or production
@@ -37,7 +37,7 @@ export default {
     },
     image: {
         dir: './data/images',
-        minPrevieLogSize: 5,
+        minPreviewLogSize: 5,
         enableCreatePreviewImageTask: true
     }
 };

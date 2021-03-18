@@ -8,23 +8,23 @@
     "synchronize": false,
     "logging": false,
     "entities": [
-       "db/entity/**/*.ts"
+       "src/db/entity/**/*.ts"
     ],
     "migrations": [
-       "db/migration/**/*.ts"
+       "src/db/migration/**/*.ts"
     ],
     "subscribers": [
-       "db/subscriber/**/*.ts"
+       "src/db/subscriber/**/*.ts"
     ],
     "seeds": [
-        "db/seeds/**/*.ts"
+        "src/db/seeds/**/*.ts"
     ],
     "factories": [
-        "db/factories/**/*.ts"
+        "src/db/factories/**/*.ts"
     ],
     "cli": {
-        "entitiesDir": "db/entity",
-        "migrationsDir": "db/migration",
-        "subscribersDir": "db/subscriber"
+        "entitiesDir": "src/db/entity",
+        "migrationsDir": "src/db/migration",
+        "subscribersDir": "src/db/subscriber"
      }
  }

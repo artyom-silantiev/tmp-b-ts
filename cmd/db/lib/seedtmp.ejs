@@ -2,8 +2,8 @@
 <% if (comment) { %>
 // comment: <%= comment %>
 <% } %>
-import * as db from '../../db';
-import * as salthash from '../../lib/salthash';
+import * as db from '@/db';
+import * as salthash from '@/lib/salthash';
 
 export async function up () {
     await db.models.User.getRepository.create({

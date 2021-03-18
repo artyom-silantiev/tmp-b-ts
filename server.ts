@@ -1,18 +1,17 @@
 import * as express from 'express';
-import redis from './lib/redis';
-import config from './config/server';
-import AppRouter from './routes/index';
-import { SendEmailType } from './env.types';
-import { sendEmailTaskWork } from './lib/mailer';
-import { sleep } from './lib/utils';
+import { redisBase } from '@/lib/redis/base';
+import config from '@/config/server';
+import AppRouter from '@/routes/index';
+import { SendEmailType } from '@/env.types';
+import { sendEmailTaskWork } from '@/lib/mailer';
+import { sleep } from '@/lib/utils';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import * as db from './db';
+import * as db from '@/db';
 
 async function serverStart() {
     await db.init();
-    redis.init();
-    const redisClient = redis.getClient();
+    const redisClient = redisBase.getClient();
 
     const keys = await redisClient.keys('*');
     for (let key of keys) {
