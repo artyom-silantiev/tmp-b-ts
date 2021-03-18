@@ -25,7 +25,7 @@ npm run db_seeder
 ```sh
 cd <project_root>
 docker-compose up -d
-npx nodemon server.ts
+npm run server
 ```
 
 # generate migration
