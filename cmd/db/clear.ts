@@ -1,14 +1,17 @@
-import * as db from '../../db';
-import { MoreThanOrEqual } from 'typeorm';
+import { PrismaClient } from '@prisma/client';
 
 export default async function (argv) {
-  await db.init();
+  const prisma = new PrismaClient();
 
-  const countAuthorizationDeleted = await db.models.Authorization.getRepository().delete(
-    {
-      expirationAt: MoreThanOrEqual(new Date()),
+  const countAuthorizationDeleted = await prisma.authorization.deleteMany({
+    where: {
+      expirationAt: {
+        lte: new Date()
+      }
     }
-  );
+  });
 
-  console.log(`${countAuthorizationDeleted.affected} authorizations clear`);
+  console.log(`${countAuthorizationDeleted.count} authorizations clear`);
+
+  prisma.$disconnect();
 }

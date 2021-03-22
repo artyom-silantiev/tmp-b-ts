@@ -1,24 +1,17 @@
 import { Request, Response } from 'express';
-import config from '../config/server';
 import Validator, { vlChecks } from '../lib/validator';
 import * as jwt from 'jsonwebtoken';
 import * as salthash from '../lib/salthash';
 import * as multer from 'multer';
-import * as db from '../db';
-import * as ImageModel from '../db/entity/Image';
+import * as db from '../models';
+import { Image, User } from '.prisma/client';
+
+const prisma = db.getPrisma();
 
 /**
  * @method post
  */
 export async function create (req: Request, res: Response) {
-  let userRegIsDisabledSetting = await db.models.Setting.getRepository().getSetting(
-    db.models.Setting.Settings.userRegistrationDisabled
-  );
-  if (userRegIsDisabledSetting && userRegIsDisabledSetting.value === '1') {
-    res.status(403).send('disabled');
-    return;
-  }
-
   let validationResult = await new Validator([
     {
       field: 'email',
@@ -64,11 +57,12 @@ export async function create (req: Request, res: Response) {
   const email = req.body.email;
   const password = req.body.password;
 
-  const user = await db.models.User.getRepository().findOne({
+  const user = await prisma.user.findFirst({
     where: {
-      email,
-    },
+      email
+    }
   });
+  
   if (user) {
     res
       .status(400)
@@ -76,13 +70,12 @@ export async function create (req: Request, res: Response) {
     return
   }
 
-  const newUser = await db.models.User.getRepository().createUser(
+  const newUser = await db.models.User.createUser(
     email,
     password
   );
-  await newUser.sendRegisterNotify();
-
-  res.status(201).json({ user: newUser.publicInfo() });
+  await db.models.User.sendRegisterNotify(newUser);
+  res.status(201).json({ user: db.models.User.publicInfo(newUser) });
 }
 
 /**
@@ -113,12 +106,14 @@ export async function login (req: Request, res: Response) {
   const email = req.body.email;
   const password = req.body.password;
 
-  const user = await db.models.User.getRepository().findOne({
+  const user = await prisma.user.findFirst({
     where: {
-      email,
+      email
     },
-    relations: ['avatarImage']
-  });
+    include: {
+      Avatar: true
+    }
+  }) as User & { Avatar?: Image };
 
   if (!user || !salthash.compare(password, user.passwordHash)) {
     return res
@@ -126,13 +121,11 @@ export async function login (req: Request, res: Response) {
       .json(Validator.singleError('email', 'userNotFoundOrBadPassword'));
   }
 
-  let authorization = await user.generateAuthorization();
-
-  console.log('asdsad');
+  let authorization = await db.models.User.generateAuthorizationForUser(user);
 
   res.json({
     token: authorization.token,
-    user: user.privateInfo(),
+    user: db.models.User.privateInfo(user)
   });
 }
 
@@ -159,10 +152,7 @@ export async function resetPasswordInfo (req: Request, res: Response) {
   }
 
   const resetPasswordCode = req.query['code'];
-  const decoded = await jwt.verify(
-    resetPasswordCode,
-    config.node.jwtSecret
-  );
+  const decoded = db.models.User.verifyJwtToken(resetPasswordCode);
   if (decoded) {
     const userResetPasswordJwt = Object.assign(
       new db.models.User.UserResetPasswordJwt(),
@@ -171,7 +161,7 @@ export async function resetPasswordInfo (req: Request, res: Response) {
     const user = await userResetPasswordJwt.getUser();
     if (user) {
       return res.json({
-        email: user.email,
+        email: user.email
       });
     }
   }
@@ -200,18 +190,19 @@ export async function requestPasswordResetLink (req: Request, res: Response) {
 
   const email = req.body.email;
 
-  const user = await db.models.User.getRepository().findOne({
+  const user = await prisma.user.findFirst({
     where: {
-      email,
-    },
+      email
+    }
   });
+  
   if (!user) {
     return res
       .status(404)
       .json(Validator.singleError('email', 'userNotFound'));
   }
 
-  await user.sendResetPasswordLinkNotify();
+  await db.models.User.sendResetPasswordLinkNotify(user);
 
   res.json({});
 }
@@ -253,10 +244,7 @@ export async function resetPassword (req: Request, res: Response) {
   const password = req.body.password;
 
   const resetPasswordCode = req.body['resetPasswordCode'];
-  const decoded = await jwt.verify(
-    resetPasswordCode,
-    config.node.jwtSecret
-  );
+  const decoded = db.models.User.verifyJwtToken(resetPasswordCode);
   if (decoded) {
     const userResetPasswordJwt = Object.assign(
       new db.models.User.UserResetPasswordJwt(),

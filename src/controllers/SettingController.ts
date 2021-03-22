@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
-import * as db from '../db';
+import { SettingColection } from '@prisma/client';
+import * as db from '@/models';
 
 export async function getFrontCollection (req: Request, res: Response) {
-  const settingsFrontCollection = await db.models.Setting.getRepository().getSettingsCollection(
-    db.models.Setting.SettingColection.Front
+  const settingsFrontCollection = await db.models.Setting.getSettingsCollection(
+    SettingColection.FRONT
   );
   res.json(settingsFrontCollection);
 }

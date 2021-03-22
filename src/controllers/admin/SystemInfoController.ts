@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as cp from 'child_process';
-import * as db from '@/db';
+import * as db from '@/models';
 import * as os from 'os';
 
 export interface SystemInfo {
@@ -13,6 +13,8 @@ export interface SystemInfo {
   ramUsage: string,
   ramFree: string,
 }
+
+const prisma = db.getPrisma();
 
 async function getDiscInfo(mountedon): Promise<{
   usedSize: number,
@@ -44,9 +46,7 @@ async function getDiscInfo(mountedon): Promise<{
 };
 
 export async function getSystemInfo(req: Request, res: Response) {
-  const repoImage = db.models.Image.getRepository();
-
-  const imagesCount = await repoImage.count();
+  const imagesCount = await prisma.image.count();
 
   const freeMem = os.freemem();
   const totalMem = os.totalmem();

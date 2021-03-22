@@ -1,47 +1,55 @@
 import { Request, Response } from 'express';
-import * as SettingModel from '@/db/entity/Setting';
+import * as db from '@/models';
 import { redisBase } from '@/lib/redis/base';
 
+const prisma = db.getPrisma();
+
 export async function getAll (req: Request, res: Response) {
-  const settings = await SettingModel.getRepository().find();
+  const settings = await prisma.setting.findMany();
   res.json(
     settings.map((row) => {
-      return row.toShort();
+      return db.models.Setting.toShort(row);
     })
   );
 }
 
 export async function getByName (req: Request, res: Response) {
-  const settingName = req.query['name'];
-  const setting = await SettingModel.getRepository().findOne({
+  const settingName = req.query.name as string;
+  const setting = await prisma.setting.findFirst({
     where: {
-      name: settingName,
-    },
+      name: settingName
+    }
   });
 
   if (!setting) {
     return res.status(404).send('not found');
   }
 
-  res.json(setting.toShort());
+  res.json(db.models.Setting.toShort(setting));
 }
 
 export async function change (req: Request, res: Response) {
   let settingName = req.body.name;
   let settingValue = req.body.value;
 
-  const setting = await SettingModel.getRepository().findOne({
+  const setting = await prisma.setting.findFirst({
     where: {
-      name: settingName,
-    },
+      name: settingName
+    }
   });
 
   if (!setting) {
     return res.status(404).send('not found');
   }
 
-  setting.setValue(settingValue);
-  SettingModel.getRepository().save(setting);
+  await prisma.setting.update({
+    where: {
+      id: setting.id
+    },
+    data: {
+      value: settingValue
+    }
+  })
 
   // clear cache
   await redisBase.getClient().del('db:settings:' + setting.name);

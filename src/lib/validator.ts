@@ -1,9 +1,10 @@
 import validator from 'validator';
 import axios from 'axios';
 import { Request } from 'express';
-import config from '../config';
 import * as _ from 'lodash';
 import * as moment from 'moment';
+
+
 
 interface ICheckParams {
   body?: any;
@@ -109,7 +110,7 @@ export class CustomChecks {
 
   public static async googleRecaptchaVerify(value, req: Request) {
     var recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify?';
-    recaptcha_url += 'secret=' + config.googleRecaptcha.secretKey + '&';
+    recaptcha_url += 'secret=' + process.env.GOOGLE_RECAPTCHA + '&';
     recaptcha_url += 'response=' + value + '&';
     recaptcha_url += 'remoteip=' + req.connection.remoteAddress;
 

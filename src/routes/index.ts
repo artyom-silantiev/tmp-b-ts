@@ -1,10 +1,10 @@
 import * as express from 'express';
 import * as path from 'path';
-import { UserJwt } from '../db/entity/User';
+import { UserJwt } from '@/models/User';
 import * as cookieParser from 'cookie-parser';
 import { wrap, cacheControlMiddleware, parseAuthorizationMiddleware } from './lib';
 import acl from '../lib/acl';
-import * as db from '../db';
+import { UserRole } from '@prisma/client';
 
 import * as ImageController from '../controllers/ImageController';
 import * as SiteMapController from '../controllers/SiteMapController';
@@ -13,14 +13,14 @@ import * as GuestController from '../controllers/GuestController';
 import * as UserController from '../controllers/UserController';
 import * as SettingController from '../controllers/SettingController';
 import * as PageController from '../controllers/PageController';
-import * as NewsController from '../controllers/NewsController';
+import * as PublicationsController from '../controllers/PublicationController';
 
 import * as AdminSystemInfoController from '../controllers/admin/SystemInfoController';
 import * as AdminSettingController from '../controllers/admin/SettingController';
 import * as AdminUserController from '../controllers/admin/UserController';
 import * as AdminPageController from '../controllers/admin/PageController';
 import * as AdminImageController from '../controllers/admin/ImageController';
-import * as AdminNewsController from '../controllers/admin/NewsController';
+import * as AdminPublicationController from '../controllers/admin/PublicationController';
 
 const cwd = process.cwd();
 
@@ -47,7 +47,7 @@ function apiRouter () {
 
   function adminRouter () {
     const router = express.Router();
-    router.use(acl.allow(db.models.User.UserRole.Admin));
+    router.use(acl.allow(UserRole.ADMIN));
 
     router.get    ('/system_info', wrap(AdminSystemInfoController.getSystemInfo));
 
@@ -64,8 +64,8 @@ function apiRouter () {
     router.get    ('/image/list', wrap(AdminImageController.getList));
     router.post   ('/image/upload', AdminImageController.uploadMiddleware(), wrap(AdminImageController.upload));
 
-    router.put    ('/news', wrap(AdminNewsController.put));
-    router.delete ('/news/:id', wrap(AdminNewsController.put));
+    router.put    ('/publication', wrap(AdminPublicationController.put));
+    router.delete ('/publication/:id', wrap(AdminPublicationController.deleteById));
 
     return router;
   }
@@ -73,7 +73,7 @@ function apiRouter () {
 
   function guestRouter () {
     const router = express.Router();
-    router.use(acl.allow(db.models.User.UserRole.Guest));
+    router.use(acl.allow(UserRole.GUEST));
 
     router.post  ('/create', wrap(GuestController.create));
     router.post  ('/login', wrap(GuestController.login));
@@ -87,7 +87,7 @@ function apiRouter () {
 
   function userRouter () {
     const router = express.Router();
-    router.use(acl.deny(db.models.User.UserRole.Guest));
+    router.use(acl.deny(UserRole.GUEST));
 
     router.get   ('', wrap(UserController.getCurrent));
     router.post  ('/logout', wrap(UserController.logout));
@@ -108,8 +108,8 @@ function apiRouter () {
 
     router.get  ('/page/by_name/:name', wrap(PageController.getByName));
 
-    router.get  ('/news/list', wrap(NewsController.getList));
-    router.get  ('/news/by_id/:id', wrap(NewsController.getById));
+    router.get  ('/publication/list', wrap(PublicationsController.getFetchList));
+    router.get  ('/publication/:id', wrap(PublicationsController.getById));
 
     return router;
   }
