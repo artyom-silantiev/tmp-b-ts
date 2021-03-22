@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
-import * as db from '@/db';
+import * as db from '@/models';
 import Validator, { vlChecks } from '@/lib/validator';
 import Grid, { IGridParams } from '@/lib/grid';
+import * as _ from 'lodash';
+ 
+const prisma = db.getPrisma();
 
 export async function getList (req: Request, res: Response) {
   const grid = new Grid(req.query as IGridParams)
@@ -16,75 +19,85 @@ export async function getList (req: Request, res: Response) {
     ])
     .init();
 
-  let rowsQuery = db.models.User.getRepository()
-    .createQueryBuilder('row')
-    .leftJoinAndSelect("row.avatarImage", "avatarImage")
-    .select()
-    .skip(grid.skip)
-    .take(grid.take);
-  let totalCountQuery = db.models.User.getRepository()
-    .createQueryBuilder('row')
-    .select();
+  const rowsQueryParts = [{
+    skip: grid.skip,
+    take: grid.take,
+    include: {
+      Avatar: true
+    },
+    where: {}
+  }] as any[];
+  const totalCountQuery = [{}] as any[];
 
   if (grid.sortBy) {
-    rowsQuery.orderBy('row.' + grid.sortBy, grid.sortDesc ? 'DESC' : 'ASC');
+    rowsQueryParts.push({
+      orderBy: {
+        [grid.sortBy]: grid.sortDesc ? 'desc' : 'asc'
+      }
+    })
   }
 
   if (req.query.id) {
-    rowsQuery = rowsQuery.andWhere('row.id = :id', { id: req.query.id });
-    totalCountQuery = totalCountQuery.andWhere('row.id = :id', {
-      id: req.query.id,
-    });
+    const part = {
+      where: {
+        id: BigInt(req.query.id)
+      }
+    };
+    rowsQueryParts.push(part);
+    totalCountQuery.push(part);
   }
 
   if (req.query.email) {
-    rowsQuery = rowsQuery.andWhere('row.email ILIKE :email', {
-      email: `%${req.query.email}%`,
-    });
-    totalCountQuery = totalCountQuery.andWhere('row.email ILIKE :email', {
-      email: `%${req.query.email}%`,
-    });
+    const part = {
+      where: {
+        email: {
+          contains: req.query.email
+        }
+      }
+    };
+    rowsQueryParts.push(part);
+    totalCountQuery.push(part);
   }
 
   if (req.query.role) {
-    rowsQuery = rowsQuery.andWhere('row.role = :role', {
-      role: req.query.role,
-    });
-    totalCountQuery = totalCountQuery.andWhere('row.role = :role', {
-      role: req.query.role,
-    });
+    const part = {
+      where: {
+        role: req.query.role
+      }
+    };
+    rowsQueryParts.push(part);
+    totalCountQuery.push(part);
   }
 
   if (req.query.name) {
-    rowsQuery = rowsQuery.andWhere(
-      `CONCAT(row.firstName, ' ', row.lastName) ILIKE :fullName`,
-      { fullName: `%${req.query.name}%` }
-    );
-    totalCountQuery = totalCountQuery.andWhere(
-      `CONCAT(row.firstName, ' ', row.lastName) ILIKE :fullName`,
-      { fullName: `%${req.query.name}%` }
-    );
+    const part = {
+      where: {
+        OR: {
+          firstName: {
+            contains: req.query.name
+          },
+          lastName: {
+            contains: req.query.name
+          }
+        }
+      }
+    };
+    rowsQueryParts.push(part);
+    totalCountQuery.push(part);
   }
 
-  const rows = await rowsQuery.getMany();
-  const totalRows = await totalCountQuery.getCount();
+  const rows = await prisma.user.findMany(_.merge(rowsQueryParts));
+  const totalRows = await prisma.user.count(_.merge(rowsQueryParts));
 
   res.json({
     page: grid.page,
     pageSize: grid.pageSize,
-    rows: rows.map((row) => row.publicInfo()),
-    totalRows: totalRows,
+    rows: rows.map((row) => db.models.User.publicInfo(row)),
+    totalRows: totalRows
   });
 }
 
 export async function create (req: Request, res: Response) {
-  let userRegIsDisabledSetting = await db.models.Setting.getRepository().getSetting(
-    db.models.Setting.Settings.userRegistrationDisabled
-  );
-  if (userRegIsDisabledSetting && userRegIsDisabledSetting.value === '1') {
-    return res.status(403).send('disabled');
-  }
-
   let validationResult = await new Validator([
     {
       field: 'email',
@@ -119,10 +132,10 @@ export async function create (req: Request, res: Response) {
   const email = req.body.email;
   const password = req.body.password;
 
-  const user = await db.models.User.getRepository().findOne({
+  const user = await prisma.user.findFirst({
     where: {
-      email,
-    },
+      email
+    }
   });
   if (user) {
     return res
@@ -130,7 +143,7 @@ export async function create (req: Request, res: Response) {
       .json(Validator.singleError('email', 'userIsExists'));
   }
 
-  const newUser = await db.models.User.getRepository().createUser(
+  const newUser = await db.models.User.createUser(
     email,
     password,
     {
@@ -140,7 +153,7 @@ export async function create (req: Request, res: Response) {
     }
   );
 
-  res.status(201).json({ user: newUser.publicInfo() });
+  res.status(201).json({ user: db.models.User.publicInfo(newUser) });
 }
 
 /**
@@ -150,10 +163,10 @@ export async function create (req: Request, res: Response) {
 export async function getById (req: Request, res: Response) {
   const userId = req.params.id;
 
-  const user = await db.models.User.getRepository().findOne({
+  const user = await prisma.user.findFirst({
     where: {
-      id: userId,
-    },
+      id: BigInt(userId)
+    }
   });
 
   if (!user) {
@@ -162,5 +175,5 @@ export async function getById (req: Request, res: Response) {
     });
   }
 
-  res.json(user.publicInfo());
+  res.json(db.models.User.publicInfo(user));
 }

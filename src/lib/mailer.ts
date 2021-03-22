@@ -1,19 +1,42 @@
 import * as Nodemailer from 'nodemailer';
-import config from '../config';
-import { SendEmailType } from '../env.types';
 import * as ejs from 'ejs';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as htmlToText from 'html-to-text';
-import * as db from '../db';
+import * as db from '../models';
+import { TaskType, Task } from '@prisma/client';
 
-const mailerTransport = Nodemailer.createTransport(config.mailer.nodemailer);
+export enum SendEmailType {
+  Sync = 'sync',
+  Task = 'task'
+};
 
-interface IMailTemplateData {
+const prisma = db.getPrisma();
+
+const MAILER_SMTP_HOST = process.env.MAILER_SMTP_HOST as string;
+const MAILER_SMTP_PORT = parseInt(process.env.MAILER_SMTP_PORT);
+const MAILER_SMTP_IS_SECURE = !!parseInt(process.env.MAILER_SMTP_IS_SECURE);
+const MAILER_SMTP_AUTH_USER = process.env.MAILER_SMTP_AUTH_USER;
+const MAILER_SMTP_AUTH_PASS = process.env.MAILER_SMTP_AUTH_PASS;
+
+const mailerTransport = Nodemailer.createTransport({
+  host: MAILER_SMTP_HOST,
+  port: MAILER_SMTP_PORT,
+  secure: MAILER_SMTP_IS_SECURE,
+  auth: {
+    user: MAILER_SMTP_AUTH_USER,
+    pass: MAILER_SMTP_AUTH_PASS
+  }
+});
+const MAILER_SEND_EMAIL_TYPE = process.env.MAILER_SEND_EMAIL_TYPE as SendEmailType;
+const MAILER_DEFAULT_FROM_EMAIL = process.env.MAILER_DEFAULT_FROM_EMAIL;
+const MAILER_DEFAULT_FROM_NAME = process.env.MAILER_DEFAULT_FROM_NAME;
+
+interface MailTemplateData {
   [key: string]: any;
 }
 
-interface ISendEmailOptions {
+interface SendEmailOptions {
   from?: string;
   to: string | string[];
   cc?: string | string[];
@@ -23,8 +46,8 @@ interface ISendEmailOptions {
 
 async function generateSendEmailParams(
   templateName: string,
-  templateData: IMailTemplateData,
-  options: ISendEmailOptions
+  templateData: MailTemplateData,
+  options: SendEmailOptions
 ) {
   const templateFile = path.join(
     __dirname,
@@ -36,7 +59,7 @@ async function generateSendEmailParams(
   if (fs.pathExists(templateFile)) {
     options.from =
       options.from ||
-      `"${config.mailer.defaultFromName} ${config.mailer.defaultFromEmail}"`;
+      `"${MAILER_DEFAULT_FROM_NAME} ${MAILER_DEFAULT_FROM_EMAIL}"`;
 
     const templateText = (await fs.readFile(templateFile)).toString();
     const template = ejs.compile(templateText);
@@ -60,8 +83,8 @@ async function generateSendEmailParams(
 
 async function sendEmailNow(
   templateName: string,
-  templateData: IMailTemplateData,
-  options: ISendEmailOptions
+  templateData: MailTemplateData,
+  options: SendEmailOptions
 ) {
   const sendEmailParams = await generateSendEmailParams(
     templateName,
@@ -77,56 +100,72 @@ async function sendEmailNow(
 
 async function sendEmailTask(
   templateName: string,
-  templateData: IMailTemplateData,
-  options: ISendEmailOptions
+  templateData: MailTemplateData,
+  options: SendEmailOptions
 ) {
   const sendEmailParams = await generateSendEmailParams(
     templateName,
     templateData,
     options
-  );
+  ) as any;
 
-  const task = db.models.Task.getRepository().create();
-  task.type = db.models.Task.TaskType.SendEmail;
-  task.data = sendEmailParams;
-  db.models.Task.getRepository().save(task);
+  await prisma.task.create({
+    data: {
+      type: TaskType.SEND_EMAIL,
+      data: sendEmailParams
+    }
+  });
 }
 
 export async function sendEmail(
   templateName: string,
-  templateData: IMailTemplateData,
-  options: ISendEmailOptions
+  templateData: MailTemplateData,
+  options: SendEmailOptions
 ) {
-  if (config.mailer.sendEmailType === SendEmailType.Now) {
+  if (MAILER_SEND_EMAIL_TYPE === SendEmailType.Sync) {
     await sendEmailNow(templateName, templateData, options);
-  } else if (config.mailer.sendEmailType === SendEmailType.Task) {
+  } else if (MAILER_SEND_EMAIL_TYPE === SendEmailType.Task) {
     await sendEmailTask(templateName, templateData, options);
   }
 }
 
 const MAX_SEND_EMAIL_ATTEMPTS = 3;
 export async function sendEmailTaskWork() {
-  if (config.mailer.sendEmailType !== SendEmailType.Task) {
+  if (MAILER_SEND_EMAIL_TYPE !== SendEmailType.Task) {
     return;
   }
 
-  const sendEmailTask = await db.models.Task.getRepository().findOne({
+  const sendEmailTask = await prisma.task.findFirst({
     where: {
-      type: db.models.Task.TaskType.SendEmail,
-      attempts: db.operators.LessThan(MAX_SEND_EMAIL_ATTEMPTS),
+      type: TaskType.SEND_EMAIL,
+      attempts: {
+        lt: MAX_SEND_EMAIL_ATTEMPTS
+      }
     },
-    order: {
-      createdAt: 'ASC',
-    },
-  });
+    orderBy: {
+      createdAt: 'asc',
+    }
+  }) as Task & {
+    data: any
+  };
 
   if (sendEmailTask) {
     try {
       await mailerTransport.sendMail(sendEmailTask.data);
-      await db.models.Task.getRepository().remove(sendEmailTask);
+      await prisma.task.delete({
+        where: {
+          id: sendEmailTask.id
+        }
+      });
     } catch (error) {
-      sendEmailTask.attempts++;
-      await db.models.Task.getRepository().remove(sendEmailTask);
+      await prisma.task.update({
+        where: {
+          id: sendEmailTask.id
+        }, 
+        data: {
+          attempts: sendEmailTask.attempts + 1
+        }
+      })
     }
   }
 }

@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import * as PageModel from '@/db/entity/Page';
+import * as db from '@/models';
 
 export async function change (req: Request, res: Response) {
   const pageName = req.body.name;
   const pageData = req.body.data;
-  await PageModel.getRepository().setPage(pageName, pageData);
+  await db.models.Page.setPage(pageName, pageData);
   res.send('done');
 }

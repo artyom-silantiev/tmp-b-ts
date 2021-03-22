@@ -2,19 +2,23 @@ import { Request, Response } from 'express';
 import * as path from 'path';
 import * as _ from 'lodash';
 import * as sharp from 'sharp';
-import * as ImageModel from '@/db/entity/Image';
+import * as db from '@/models';
+import { Image } from '@prisma/client';
 import { redisBase } from '@/lib/redis/base';
-import config from '@/config';
+import { ImageMeta } from '@/models/Image';
 
-const imageDir = path.join(process.cwd(), config.image.dir);
+const prisma = db.getPrisma();
+const imageDir = path.join(process.cwd(), process.env.DIR_IMAGES);
 const waitPreviewImagePromises = {};
+const IMAGE_ENABLED_CREATE_IMAGE_TASK = !!parseInt(process.env.IMAGE_ENABLED_CREATE_IMAGE_TASK);
+const IMAGE_MIN_PREVEIW_LOG_SIZE = parseInt(process.env.IMAGE_MIN_PREVEIW_LOG_SIZE);
 
 const redisSub = redisBase.getClientSubscribe();
 redisSub.subscribe('create_image_preview_task', 'create_image_preview_done');
 redisSub.redis.on('message', async (channel, taskKey) => {
   if (
     channel === 'create_image_preview_task' &&
-    config.image.enableCreatePreviewImageTask
+    IMAGE_ENABLED_CREATE_IMAGE_TASK
   ) {
     await createImagePreview(taskKey);
   } else if (channel === 'create_image_preview_done') {
@@ -36,11 +40,13 @@ async function createImagePreview(taskKey) {
     let taskStr = await redisClient.get(taskKey);
     if (taskStr !== 'idle') {
       let task = JSON.parse(taskStr);
-      let imageRow = await ImageModel.getRepository().findOne({
+      let imageRow = await prisma.image.findFirst({
         where: {
           uuid: task.uuid,
         },
-      });
+      }) as Image & {
+        meta: ImageMeta
+      };
 
       let originalImageFile = path.join(
         imageDir,
@@ -57,9 +63,16 @@ async function createImagePreview(taskKey) {
         .resize(task.thumbsSize)
         .jpeg({ quality: 75 })
         .toFile(newThumbImageFile);
+      
       imageRow.meta.thumbs.push(task.thumbsSize);
-      imageRow.meta = _.clone(imageRow.meta);
-      await ImageModel.getRepository().save(imageRow);
+      await prisma.image.update({
+        where: {
+          id: imageRow.id
+        },
+        data: {
+          meta: _.clone(imageRow.meta)
+        }
+      })
 
       await redisClient.del('db:image:uuid:' + imageRow.uuid);
       await redisClient.del(taskKey);
@@ -120,11 +133,13 @@ export async function getImageByUuid (req: Request, res: Response) {
     resData.location = cachedImage.location;
     resData.meta = JSON.parse(cachedImage.meta);
   } else {
-    imageRow = await ImageModel.getRepository().findOne({
+    imageRow = await prisma.image.findFirst({
       where: {
-        uuid,
-      },
-    });
+        uuid
+      }
+    }) as Image & {
+      meta: ImageMeta
+    };
 
     if (!imageRow) {
       res.status(404).send();
@@ -149,24 +164,27 @@ export async function getImageByUuid (req: Request, res: Response) {
       thumbsSize = resData.meta.width;
     }
     let sizeLog2 = Math.max(
-      config.image.minPreviewLogSize,
+      IMAGE_MIN_PREVEIW_LOG_SIZE,
       Math.floor(Math.log2(thumbsSize))
     );
     thumbsSize = Math.pow(2, sizeLog2);
 
     if (resData.meta.thumbs.indexOf(thumbsSize) === -1) {
-      const taskKey =
-        'task:create_image_preview:' + uuid + ':' + thumbsSize;
+      const taskKey = 'task:create_image_preview:' + uuid + ':' + thumbsSize;
       const taskExists = await redisClient.exists(taskKey);
+
       if (!taskExists) {
         await redisClient.set(taskKey, 'idle');
-        imageRow =
-          imageRow ||
-          (await ImageModel.getRepository().findOne({
+
+        imageRow = imageRow ||
+          (await await prisma.image.findFirst({
             where: {
-              uuid,
-            },
-          }));
+              uuid
+            }
+          }) as Image & {
+            meta: ImageMeta
+          });
+        
         let taskBody = {
           uuid: uuid,
           thumbsSize,
@@ -174,6 +192,7 @@ export async function getImageByUuid (req: Request, res: Response) {
         await redisClient.set(taskKey, JSON.stringify(taskBody));
         await redisClient.publish('create_image_preview_task', taskKey);
       }
+      
       const waitResult = await waitPreviewImage(taskKey);
       if (waitResult) {
         resImageFile = path.join(

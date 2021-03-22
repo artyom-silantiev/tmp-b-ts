@@ -1,16 +1,15 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import * as express from 'express';
 import { redisBase } from '@/lib/redis/base';
-import config from '@/config/server';
 import AppRouter from '@/routes/index';
-import { SendEmailType } from '@/env.types';
 import { sendEmailTaskWork } from '@/lib/mailer';
 import { sleep } from '@/lib/utils';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import * as db from '@/db';
 
 async function serverStart() {
-    await db.init();
     const redisClient = redisBase.getClient();
 
     const keys = await redisClient.keys('*');
@@ -27,17 +26,20 @@ async function serverStart() {
     const app = express();
     app.use(AppRouter);
 
+    const NODE_PORT=process.env.NODE_PORT;
+
     // Serve the application at the given port
-    app.listen(config.node.port, () => {
+    app.listen(NODE_PORT, () => {
         // Success callback
-        console.log(`Listening at http://localhost:${config.node.port}/`);
+        console.log(`Listening at http://localhost:${NODE_PORT}/`);
     });
 
-    if (config.mailer.sendEmailType === SendEmailType.Task) {
+    if (process.env.MAILER_SEND_EMAIL_TYPE === 'TASK') {
+        const MAILER_TASK_DELAY = parseInt(process.env.MAILER_TASK_DELAY);
         (async function () {
             while (true) {
                 await sendEmailTaskWork();
-                await sleep(config.mailer.sendEmailTaskDealy);
+                await sleep(MAILER_TASK_DELAY);
             }
         })();
     }

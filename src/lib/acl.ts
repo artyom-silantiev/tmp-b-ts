@@ -1,4 +1,4 @@
-import { UserRole } from '../db/entity/User';
+import { UserRole } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
 
 function checkAccess(data: UserRole[] | UserRole, isAllow?: boolean) {
@@ -13,7 +13,7 @@ function checkAccess(data: UserRole[] | UserRole, isAllow?: boolean) {
     if (!roles.length) {
       access = true;
     } else {
-      let role = UserRole.Guest;
+      let role = UserRole.GUEST as UserRole;
 
       if (req.authorization) {
         role = req.authorization.role;

@@ -1,36 +1,41 @@
 import { Request, Response } from 'express';
 import * as multer from 'multer';
-import * as db from '@/db';
-import * as ImageModel from '@/db/entity/Image';
+import * as db from '@/models';
 import Grid, { IGridParams } from '@/lib/grid';
+import * as _ from 'lodash';
+import { Image } from '.prisma/client';
+import { ImageMeta } from '@/models/Image';
+
+const prisma = db.getPrisma();
 
 export async function getList (req: Request, res: Response) {
   const grid = new Grid(req.query as IGridParams)
     .setSortOptions(['id', 'sha256', 'createdAt'])
     .init();
 
-  let rowsQuery = db.models.Image.getRepository()
-    .createQueryBuilder('row')
-    .select()
-    .skip(grid.skip)
-    .take(grid.take);
-  let totalCountQuery = db.models.Image.getRepository()
-    .createQueryBuilder('row')
-    .select();
+  const rowsQueryParts = [{
+    skip: grid.skip,
+    take: grid.take
+  }] as any[];
+  let totalCountQueryParts = [{}] as any[];
 
   if (grid.sortBy) {
-    rowsQuery['order'] = [[grid.sortBy, grid.sortDesc ? 'DESC' : 'ASC']];
+    rowsQueryParts.push({
+      orderBy: {
+        [grid.sortBy]: grid.sortDesc ? 'desc' : 'asc'
+      }
+    });
   }
 
-  const rows = await rowsQuery.getMany();
-  const rowsCount = await totalCountQuery.getCount();
+  const rows = await prisma.image.findMany(_.merge(rowsQueryParts));
+  const rowsCount = await prisma.image.count(_.merge(totalCountQueryParts));
 
   res.json({
     page: grid.page,
     pageSize: grid.pageSize,
-    rows: rows.map((row) => {
+    rows: rows.map((row: Image & { meta: ImageMeta }) => {
       return {
-        id: row.id,
+        id: row.id.toString(),
         uuid: row.uuid,
         sha256: row.sha256,
         width: row.meta.width,
@@ -70,7 +75,7 @@ export async function upload (req: Request, res: Response) {
     ) !== -1
   ) {
     const imageFile = file;
-    const putImageRes = await ImageModel.getRepository().putImageAndGetRefInfo(imageFile.buffer);
+    const putImageRes = await db.models.Image.putImageAndGetRefInfo(imageFile.buffer);
     if (putImageRes.isGood()) {
       res.status(putImageRes.code).json({
         id: putImageRes.data,

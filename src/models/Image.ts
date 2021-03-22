@@ -1,35 +1,21 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Unique,
-  Index,
-  EntityRepository,
-  Repository,
-  getCustomRepository,
-  OneToMany,
-  JoinColumn
-} from 'typeorm';
+import { getPrisma } from './index';
+import { Image, ImageLocation } from '@prisma/client';
 
 import * as moment from 'moment';
 import * as sharp from 'sharp';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import bs58 from '@/lib/bs58';
-import config from '@/config';
 import * as utils from '@/lib/utils';
 import StandardResult from '@/lib/classes/standard_result';
 
-const imageDir = path.join(process.cwd(), config.image.dir);
-const tempDir = path.join(process.cwd(), config.node.tempFilesDir);
+const IMAGE_MIN_PREVEIW_LOG_SIZE = parseInt(process.env.IMAGE_MIN_PREVEIW_LOG_SIZE);
+const imageDir = path.join(process.cwd(), process.env.DIR_IMAGES);
+const tempDir = path.join(process.cwd(), process.env.DIR_TEMP_FILES);
 fs.mkdirsSync(imageDir);
 fs.mkdirsSync(tempDir);
 
-export enum ImageLocation {
-  Local = 'local',
-}
+const prisma = getPrisma();
 
 export interface ImageMeta {
   format: string;
@@ -39,51 +25,13 @@ export interface ImageMeta {
   thumbs: number[];
 }
 
-@Entity({
-  name: 'images',
-})
-@Index(['uuid'])
-@Index(['sha256'])
-export class Image {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
-  id: string;
-
-  @Column({ type: 'varchar', length: 24 })
-  uuid: string;
-
-  @Column({ type: 'varchar', length: 64 })
-  sha256: string;
-
-  @Column({
-    type: 'enum',
-    enumName: 'images_image_location_enum',
-    enum: ImageLocation,
-    default: ImageLocation.Local,
-  })
-  location: ImageLocation;
-
-  @Column()
-  path: string;
-
-  @Column({ type: 'jsonb' })
-  meta: ImageMeta;
-
-  @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
-
-  public getPublicPath () {
-    if (this.location === ImageLocation.Local) {
-      return '/image/' + this.uuid;
-    }
+export function getPublicPath (image: Image) {
+  if (image.location === ImageLocation.LOCAL) {
+    return '/image/' + image.uuid;
   }
 }
 
-@EntityRepository(Image)
-export class ImageRepository extends Repository<Image> {
-  public async putImageAndGetRefInfo (imageFileOrBuf: string | Buffer):
+export async function putImageAndGetRefInfo (imageFileOrBuf: string | Buffer):
     Promise<StandardResult<Image>>
   {
     if (typeof imageFileOrBuf === 'string') {
@@ -107,10 +55,10 @@ export class ImageRepository extends Repository<Image> {
     const tempFile = path.join(tempDir, newUuid + '.' + format);
     await fs.writeFile(tempFile, imageFileOrBuf);
     const imageSha256 = await utils.sha256File(tempFile);
-    const imageRow = await this.findOne({
+    const imageRow = await prisma.image.findFirst({
       where: {
-        sha256: imageSha256,
-      },
+        sha256: imageSha256
+      }
     });
     if (imageRow) {
       await fs.remove(tempFile);
@@ -122,15 +70,15 @@ export class ImageRepository extends Repository<Image> {
     await fs.mkdirs(dest);
     const originalImageFile = path.join(dest, 'original.' + format);
     await fs.move(tempFile, originalImageFile);
-    const meta = <ImageMeta>{
+    const meta = {
       format: format,
       width: imageMeta.width,
       height: imageMeta.height,
       size: imageMeta.size,
-      thumbs: [],
-    };
+      thumbs: []
+    }; // as ImageMeta;
 
-    let thumbLog2 = config.image.minPreviewLogSize;
+    let thumbLog2 = IMAGE_MIN_PREVEIW_LOG_SIZE;
     let thumbWidth = Math.pow(2, thumbLog2);
     while (imageMeta.width >= thumbWidth) {
       let newThumbImageFile = path.join(
@@ -149,18 +97,15 @@ export class ImageRepository extends Repository<Image> {
       thumbWidth = Math.pow(2, thumbLog2);
     }
 
-    const newImage = this.create();
-    newImage.uuid = newUuid;
-    newImage.sha256 = imageSha256;
-    newImage.location = ImageLocation.Local;
-    newImage.path = localDest;
-    newImage.meta = meta;
-    await this.save(newImage);
+    const newImage = await prisma.image.create({
+      data: {
+        uuid: newUuid,
+        sha256: imageSha256,
+        location: ImageLocation.LOCAL,
+        path: localDest,
+        meta: meta
+      }
+    });
 
     return standardResult.setCode(201).setData(newImage);
   }
-}
-
-export function getRepository() {
-  return getCustomRepository(ImageRepository);
-}

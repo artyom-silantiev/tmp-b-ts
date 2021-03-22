@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  GUEST
+  USER
+  ADMIN
+}
+
+model User {
+  id                BigInt          @id @default(autoincrement())
+  role              UserRole        @default(USER)
+  email             String          @unique @db.VarChar(255)
+  emailActivatedAt  DateTime?
+  passwordHash      String          @db.VarChar(255)
+  firstName         String          @default("") @db.VarChar(64)
+  lastName          String          @default("") @db.VarChar(64)
+  Avatar            Image?          @relation(fields: [avatarId], references: [id])
+  avatarId          BigInt?
+  Autorizations     Authorization[]
+  lalala            String          @db.VarChar(16)
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+enum ImageLocation {
+  LOCAL
+}
+
+model Image {
+  id                BigInt          @id @default(autoincrement())
+  uuid              String          @unique @db.VarChar(24)
+  sha256            String          @db.VarChar(64)
+  location          ImageLocation   @default(LOCAL)
+  path              String          @db.VarChar(255)
+  meta              Json
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  Users             User[]
+
+  @@index([sha256])
+}
+
+enum TaskType {
+  SEND_EMAIL
+}
+
+model Task {
+  id                BigInt          @id @default(autoincrement())
+  type              TaskType        @default(SEND_EMAIL)
+  data              Json
+  attempts          Int             @db.SmallInt @default(0)
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+enum SettingColection {
+  NONE
+  FRONT
+}
+
+enum SettingType {
+  STRING
+  INTEGER
+  DESIMAL
+  BOOL
+  TEXT
+}
+
+model Setting {
+  id                BigInt              @id @default(autoincrement())
+  collection        SettingColection    @default(NONE)
+  type              SettingType         @default(STRING)
+  name              String              @db.VarChar(255)
+  value             String              @db.Text
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([collection])
+  @@index([name])
+}
+
+model Page {
+  id                BigInt              @id @default(autoincrement())
+  name              String              @db.VarChar(255)
+  data              Json
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+enum PublicationStatus {
+  DRAFT
+  PUBLISH
+}
+
+enum PublicationType {
+  NONE
+  NEWS
+  ARTICLE
+}
+
+model Publication {
+  id                BigInt              @id @default(autoincrement())
+  type              PublicationType     @default(NONE)
+  status            PublicationStatus   @default(DRAFT)
+  header            String              @db.VarChar(255)
+  annotation        Json
+  content           Json
+  publishAt         DateTime
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([publishAt])
+}
+
+model Authorization {
+  id                BigInt              @id @default(autoincrement())
+  tokenUid          String              @unique @db.VarChar(24)
+  expirationAt      DateTime
+  userId            BigInt
+  User              User                @relation(fields: [userId], references: [id])
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}

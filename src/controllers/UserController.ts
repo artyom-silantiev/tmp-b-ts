@@ -1,13 +1,12 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import config from '../config/server';
+import { Router, Request, Response } from 'express';
 import Validator, { vlChecks } from '../lib/validator';
 import * as jwt from 'jsonwebtoken';
 import * as salthash from '../lib/salthash';
 import * as multer from 'multer';
-import * as db from '../db';
-import * as ImageModel from '../db/entity/Image';
+import * as db from '@/models';
 
 const router = Router();
+const prisma = db.getPrisma();
 
 export async function getCurrent (req: Request, res: Response) {
   const resData = {
@@ -18,7 +17,7 @@ export async function getCurrent (req: Request, res: Response) {
   if (req.authorization) {
     let user = await req.authorization.getUser();
     resData.isAuth = true;
-    resData.user = user.privateInfo();
+    resData.user = db.models.User.privateInfo(user);
   }
 
   res.json(resData);
@@ -39,7 +38,7 @@ export async function logout (req: Request, res: Response) {
 export async function activateJwt (req: Request, res: Response) {
   const activateJwt = req.params['activateJwt'];
   if (activateJwt) {
-    const decoded = jwt.verify(activateJwt, config.node.jwtSecret);
+    const decoded = db.models.User.verifyJwtToken(activateJwt);
     if (decoded) {
       const activateUserJwt = Object.assign(
         new db.models.User.UserActivateJwt(),
@@ -101,8 +100,14 @@ export async function changePassword (req: Request, res: Response) {
       .json(Validator.singleError('oldPassword', 'fieldInvalid'));
   }
 
-  user.passwordHash = salthash.generateSaltHash(newPassword);
-  await db.models.User.getRepository().save(user);
+  await prisma.user.update({
+    where: {
+      id: user.id
+    },
+    data: {
+      passwordHash: salthash.generateSaltHash(newPassword)
+    }
+  });
 
   res.send('done');
 }
@@ -127,10 +132,16 @@ export async function uploadAvatar (req: Request, res: Response) {
   ) {
     const user = await req.authorization.getUser();
     const imageFile = req.files[0];
-    const putImageRes = await ImageModel.getRepository().putImageAndGetRefInfo(imageFile.buffer);
+    const putImageRes = await db.models.Image.putImageAndGetRefInfo(imageFile.buffer);
     if (putImageRes.isGood()) {
-      user.avatarImage = putImageRes.data;
-      await db.models.User.getRepository().save(user);
+      await prisma.user.update({
+        where: {
+          id: user.id
+        },
+        data: {
+          avatarId: putImageRes.data.id
+        }
+      });
       res.status(putImageRes.code).json({
         uuid: putImageRes.data.uuid,
         meta: putImageRes.data.meta
@@ -185,9 +196,15 @@ export async function settingsUpdate (req: Request, res: Response) {
       .json(Validator.singleError('lastName', 'fieldInvalid'));
   }
 
-  user.firstName = req.body.firstName;
-  user.lastName = req.body.lastName;
-  await db.models.User.getRepository().save(user);
+  await prisma.user.update({
+    where: {
+      id: user.id
+    },
+    data: {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName
+    }
+  });
 
   res.send('done');
 }
@@ -197,13 +214,15 @@ export async function settingsUpdate (req: Request, res: Response) {
  * @scheme /:id
  */
 export async function getById (req: Request, res: Response) {
-  const userId = req.params.id;
+  const userId = BigInt(req.params.id);
 
-  const user = await db.models.User.getRepository().findOne({
+  const user = await prisma.user.findFirst({
     where: {
       id: userId,
     },
-    relations: ['avatarImage']
+    include: {
+      Avatar: true
+    }
   });
 
   if (!user) {
@@ -212,5 +231,5 @@ export async function getById (req: Request, res: Response) {
     });
   }
 
-  res.json(user.publicInfo());
+  res.json(db.models.User.publicInfo(user));
 }

@@ -1,10 +1,13 @@
-import { createHandyClient, IHandyRedis } from 'handy-redis';
-import config from '@/config';
+import { createNodeRedisClient, WrappedNodeRedisClient } from 'handy-redis';
+
+const REDIS_HOST = process.env.REDIS_HOST;
+const REDIS_PORT = parseInt(process.env.REDIS_PORT);
+const REDIS_DB = parseInt(process.env.REDIS_DB);
 
 export class RedisBase {
-  protected defaultClient: IHandyRedis;
-  protected defaultClientSubscribe: IHandyRedis;
-  protected clients: { [key: string]: IHandyRedis } = {};
+  protected defaultClient: WrappedNodeRedisClient;
+  protected defaultClientSubscribe: WrappedNodeRedisClient;
+  protected clients: { [key: string]: WrappedNodeRedisClient } = {};
 
   constructor() {
     this.init();
@@ -15,20 +18,20 @@ export class RedisBase {
       this.defaultClient.quit();
     }
     this.defaultClient = this.createClient();
-    this.defaultClient.select(config.redis.database);
+    this.defaultClient.select(REDIS_DB);
 
     if (this.defaultClientSubscribe) {
       this.defaultClientSubscribe.quit();
     }
     this.defaultClientSubscribe = this.createClient();
-    this.defaultClientSubscribe.select(config.redis.database);
+    this.defaultClientSubscribe.select(REDIS_DB);
 
     return this;
   }
 
   protected createClient() {
-    let newClient = createHandyClient(config.redis.port, config.redis.host);
-    newClient.select(config.redis.database);
+    let newClient = createNodeRedisClient(REDIS_PORT, REDIS_HOST);
+    newClient.select(REDIS_DB);
     return newClient;
   }
 

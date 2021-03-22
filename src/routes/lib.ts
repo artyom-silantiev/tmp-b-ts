@@ -1,7 +1,6 @@
 import * as express from 'express';
-import config from '../config/server';
 import * as jwt from 'jsonwebtoken';
-import { UserJwt } from '../db/entity/User';
+import { UserJwt, verifyJwtToken } from '../models/User';
 
 export interface FetchParamsBase {
   page: number | null;
@@ -42,7 +41,7 @@ export async function parseAuthorizationMiddleware (req: express.Request, res: e
       let token = parts[1];
 
       try {
-        let decoded = jwt.verify(token, config.node.jwtSecret);
+        let decoded = verifyJwtToken(token);
         if (decoded) {
           let userJwt = Object.assign(new UserJwt(token), decoded);
           if (await userJwt.isAuth()) {
