@@ -35,7 +35,7 @@ async function serverStart() {
     console.log(`Listening at http://localhost:${env.NODE_PORT}/`);
   });
 
-  if (env.MAILER_SEND_EMAIL_TYPE === SendEmailType.Task) {
+  if (env.MAILER_SEND_EMAIL_TYPE === SendEmailType.task) {
     (async function () {
       while (true) {
         await sendEmailTaskWork();

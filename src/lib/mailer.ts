@@ -110,16 +110,16 @@ export async function sendEmail(
   templateData: MailTemplateData,
   options: SendEmailOptions
 ) {
-  if (env.MAILER_SEND_EMAIL_TYPE === SendEmailType.Sync) {
+  if (env.MAILER_SEND_EMAIL_TYPE === SendEmailType.sync) {
     await sendEmailNow(templateName, templateData, options);
-  } else if (env.MAILER_SEND_EMAIL_TYPE === SendEmailType.Task) {
+  } else if (env.MAILER_SEND_EMAIL_TYPE === SendEmailType.task) {
     await sendEmailTask(templateName, templateData, options);
   }
 }
 
 const MAX_SEND_EMAIL_ATTEMPTS = 3;
 export async function sendEmailTaskWork() {
-  if (env.MAILER_SEND_EMAIL_TYPE !== SendEmailType.Task) {
+  if (env.MAILER_SEND_EMAIL_TYPE !== SendEmailType.task) {
     return;
   }
 
