@@ -1,8 +1,5 @@
 import { createNodeRedisClient, WrappedNodeRedisClient } from 'handy-redis';
-
-const REDIS_HOST = process.env.REDIS_HOST;
-const REDIS_PORT = parseInt(process.env.REDIS_PORT);
-const REDIS_DB = parseInt(process.env.REDIS_DB);
+import env from '@/env';
 
 export class RedisBase {
   protected defaultClient: WrappedNodeRedisClient;
@@ -18,20 +15,20 @@ export class RedisBase {
       this.defaultClient.quit();
     }
     this.defaultClient = this.createClient();
-    this.defaultClient.select(REDIS_DB);
+    this.defaultClient.select(env.REDIS_DB);
 
     if (this.defaultClientSubscribe) {
       this.defaultClientSubscribe.quit();
     }
     this.defaultClientSubscribe = this.createClient();
-    this.defaultClientSubscribe.select(REDIS_DB);
+    this.defaultClientSubscribe.select(env.REDIS_DB);
 
     return this;
   }
 
   protected createClient() {
-    let newClient = createNodeRedisClient(REDIS_PORT, REDIS_HOST);
-    newClient.select(REDIS_DB);
+    let newClient = createNodeRedisClient(env.REDIS_PORT, env.REDIS_HOST);
+    newClient.select(env.REDIS_DB);
     return newClient;
   }
 

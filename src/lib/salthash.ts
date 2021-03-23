@@ -1,9 +1,8 @@
 import * as crypto from 'crypto';
-
-const PASSWORD_SALT = process.env.PASSWORD_SALT;
+import env from '@/env';
 
 export function generateSaltHash(stringText: string, stringSalt?: string) {
-  stringSalt = stringSalt || PASSWORD_SALT;
+  stringSalt = stringSalt || env.PASSWORD_SALT;
   const hash = crypto
     .createHash('sha256')
     .update(stringText + '' + stringSalt)
@@ -23,7 +22,7 @@ export function compare(
   stringSalt?: string
 ) {
   try {
-    stringSalt = stringSalt || PASSWORD_SALT;
+    stringSalt = stringSalt || env.PASSWORD_SALT;
     const parts = saltHash.split(':');
     const hash = crypto
       .createHash('sha256')

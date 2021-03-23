@@ -6,19 +6,17 @@ import * as db from '@/models';
 import { Image } from '@prisma/client';
 import { redisBase } from '@/lib/redis/base';
 import { ImageMeta } from '@/models/Image';
+import env from '@/env';
 
 const prisma = db.getPrisma();
-const imageDir = path.join(process.cwd(), process.env.DIR_IMAGES);
 const waitPreviewImagePromises = {};
-const IMAGE_ENABLED_CREATE_IMAGE_TASK = !!parseInt(process.env.IMAGE_ENABLED_CREATE_IMAGE_TASK);
-const IMAGE_MIN_PREVEIW_LOG_SIZE = parseInt(process.env.IMAGE_MIN_PREVEIW_LOG_SIZE);
 
 const redisSub = redisBase.getClientSubscribe();
 redisSub.subscribe('create_image_preview_task', 'create_image_preview_done');
 redisSub.redis.on('message', async (channel, taskKey) => {
   if (
     channel === 'create_image_preview_task' &&
-    IMAGE_ENABLED_CREATE_IMAGE_TASK
+    env.IMAGE_ENABLED_CREATE_IMAGE_TASK
   ) {
     await createImagePreview(taskKey);
   } else if (channel === 'create_image_preview_done') {
@@ -49,12 +47,12 @@ async function createImagePreview(taskKey) {
       };
 
       let originalImageFile = path.join(
-        imageDir,
+        env.DIR_IMAGES,
         imageRow.path,
         'original.' + imageRow.meta.format
       );
       let newThumbImageFile = path.join(
-        imageDir,
+        env.DIR_IMAGES,
         imageRow.path,
         task.thumbsSize + '.jpg'
       );
@@ -164,7 +162,7 @@ export async function getImageByUuid (req: Request, res: Response) {
       thumbsSize = resData.meta.width;
     }
     let sizeLog2 = Math.max(
-      IMAGE_MIN_PREVEIW_LOG_SIZE,
+      env.IMAGE_MIN_PREVEIW_LOG_SIZE,
       Math.floor(Math.log2(thumbsSize))
     );
     thumbsSize = Math.pow(2, sizeLog2);
@@ -196,27 +194,27 @@ export async function getImageByUuid (req: Request, res: Response) {
       const waitResult = await waitPreviewImage(taskKey);
       if (waitResult) {
         resImageFile = path.join(
-          imageDir,
+          env.DIR_IMAGES,
           resData.path,
           thumbsSize + '.jpg'
         );
       } else {
         resImageFile = path.join(
-          imageDir,
+          env.DIR_IMAGES,
           resData.path,
           'original.' + resData.meta.format
         );
       }
     } else {
       resImageFile = path.join(
-        imageDir,
+        env.DIR_IMAGES,
         resData.path,
         thumbsSize + '.jpg'
       );
     }
   } else {
     resImageFile = path.join(
-      imageDir,
+      env.DIR_IMAGES,
       resData.path,
       'original.' + resData.meta.format
     );

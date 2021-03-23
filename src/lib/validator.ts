@@ -3,8 +3,7 @@ import axios from 'axios';
 import { Request } from 'express';
 import * as _ from 'lodash';
 import * as moment from 'moment';
-
-
+import env from '@/env';
 
 interface ICheckParams {
   body?: any;
@@ -110,7 +109,7 @@ export class CustomChecks {
 
   public static async googleRecaptchaVerify(value, req: Request) {
     var recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify?';
-    recaptcha_url += 'secret=' + process.env.GOOGLE_RECAPTCHA + '&';
+    recaptcha_url += 'secret=' + env.GOOGLE_RECAPTCHA + '&';
     recaptcha_url += 'response=' + value + '&';
     recaptcha_url += 'remoteip=' + req.connection.remoteAddress;
 

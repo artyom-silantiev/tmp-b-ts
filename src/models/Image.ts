@@ -8,12 +8,10 @@ import * as fs from 'fs-extra';
 import bs58 from '@/lib/bs58';
 import * as utils from '@/lib/utils';
 import StandardResult from '@/lib/classes/standard_result';
+import env from '@/env';
 
-const IMAGE_MIN_PREVEIW_LOG_SIZE = parseInt(process.env.IMAGE_MIN_PREVEIW_LOG_SIZE);
-const imageDir = path.join(process.cwd(), process.env.DIR_IMAGES);
-const tempDir = path.join(process.cwd(), process.env.DIR_TEMP_FILES);
-fs.mkdirsSync(imageDir);
-fs.mkdirsSync(tempDir);
+fs.mkdirsSync(env.DIR_IMAGES);
+fs.mkdirsSync(env.DIR_TEMP_FILES);
 
 const prisma = getPrisma();
 
@@ -52,7 +50,7 @@ export async function putImageAndGetRefInfo (imageFileOrBuf: string | Buffer):
     }
 
     const newUuid = bs58.uuid();
-    const tempFile = path.join(tempDir, newUuid + '.' + format);
+    const tempFile = path.join(env.DIR_TEMP_FILES, newUuid + '.' + format);
     await fs.writeFile(tempFile, imageFileOrBuf);
     const imageSha256 = await utils.sha256File(tempFile);
     const imageRow = await prisma.image.findFirst({
@@ -66,7 +64,7 @@ export async function putImageAndGetRefInfo (imageFileOrBuf: string | Buffer):
     }
 
     const localDest = path.join(moment().format('YYYY/MM/DD'), newUuid);
-    const dest = path.join(imageDir, localDest);
+    const dest = path.join(env.DIR_IMAGES, localDest);
     await fs.mkdirs(dest);
     const originalImageFile = path.join(dest, 'original.' + format);
     await fs.move(tempFile, originalImageFile);
@@ -78,11 +76,11 @@ export async function putImageAndGetRefInfo (imageFileOrBuf: string | Buffer):
       thumbs: []
     }; // as ImageMeta;
 
-    let thumbLog2 = IMAGE_MIN_PREVEIW_LOG_SIZE;
+    let thumbLog2 = env.IMAGE_MIN_PREVEIW_LOG_SIZE;
     let thumbWidth = Math.pow(2, thumbLog2);
     while (imageMeta.width >= thumbWidth) {
       let newThumbImageFile = path.join(
-        imageDir,
+        env.DIR_IMAGES,
         localDest,
         thumbWidth + '.jpg'
       );

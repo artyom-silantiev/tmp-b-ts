@@ -5,6 +5,7 @@ import * as mailer from '@/lib/mailer';
 import { redisBase } from '@/lib/redis/base';
 import * as _ from 'lodash';
 import Bs58 from '@/lib/bs58';
+import env from '@/env';
 
 import { UserRole, User, Image } from '@prisma/client';
 import { getPrisma } from './index';
@@ -13,8 +14,6 @@ import { getPublicPath } from './Image';
 export { getPrisma } from './index';
 
 const prisma = getPrisma();
-
-const JWT_SECRET = process.env.JWT_SECRET;
 
 export class UserJwt {
   userId: bigint;
@@ -168,7 +167,7 @@ export async function generateAuthorizationForUser (user: User, expiresInSec?: n
       userId: user.id,
       role: user.role,
     },
-    JWT_SECRET,
+    env.JWT_SECRET,
     { expiresIn: expiresInSec }
   );
 
@@ -187,7 +186,7 @@ export async function generateAuthorizationForUser (user: User, expiresInSec?: n
 export async function verifyJwtToken (token: string) {
   const decoded = await jwt.verify(
     token,
-    JWT_SECRET
+    env.JWT_SECRET
   );
   return decoded;
 }
@@ -216,13 +215,13 @@ export async function sendRegisterNotify(user: User) {
       userId: user.id.toString(),
       email: user.email,
     },
-    JWT_SECRET
+    env.JWT_SECRET
   );
 
   const activateEmailLink =
-    process.env.NODE_PROTOCOL +
+    env.NODE_PROTOCOL +
     '//' +
-    process.env.NODE_HOST +
+    env.NODE_HOST +
     '/api/user/activate/' +
     activateEmailCode;
 
@@ -242,13 +241,13 @@ export async function sendResetPasswordLinkNotify (user: User) {
       userId: user.id.toString(),
       passwordHash: user.passwordHash,
     },
-    JWT_SECRET
+    env.JWT_SECRET
   );
 
   const resetPasswordLink =
-    process.env.NODE_PROTOCOL +
+    env.NODE_PROTOCOL +
     '//' +
-    process.env.NODE_HOST +
+    env.NODE_HOST +
     '/password/reset/' +
     resetPasswordCode;
 

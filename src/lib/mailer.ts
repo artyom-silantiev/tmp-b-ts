@@ -5,32 +5,20 @@ import * as path from 'path';
 import * as htmlToText from 'html-to-text';
 import * as db from '../models';
 import { TaskType, Task } from '@prisma/client';
-
-export enum SendEmailType {
-  Sync = 'sync',
-  Task = 'task'
-};
+import env, { SendEmailType } from '@/env';
 
 const prisma = db.getPrisma();
 
-const MAILER_SMTP_HOST = process.env.MAILER_SMTP_HOST as string;
-const MAILER_SMTP_PORT = parseInt(process.env.MAILER_SMTP_PORT);
-const MAILER_SMTP_IS_SECURE = !!parseInt(process.env.MAILER_SMTP_IS_SECURE);
-const MAILER_SMTP_AUTH_USER = process.env.MAILER_SMTP_AUTH_USER;
-const MAILER_SMTP_AUTH_PASS = process.env.MAILER_SMTP_AUTH_PASS;
-
 const mailerTransport = Nodemailer.createTransport({
-  host: MAILER_SMTP_HOST,
-  port: MAILER_SMTP_PORT,
-  secure: MAILER_SMTP_IS_SECURE,
+  host: env.MAILER_SMTP_HOST,
+  port: env.MAILER_SMTP_PORT,
+  secure: env.MAILER_SMTP_IS_SECURE,
   auth: {
-    user: MAILER_SMTP_AUTH_USER,
-    pass: MAILER_SMTP_AUTH_PASS
+    user: env.MAILER_SMTP_AUTH_USER,
+    pass: env.MAILER_SMTP_AUTH_PASS
   }
 });
-const MAILER_SEND_EMAIL_TYPE = process.env.MAILER_SEND_EMAIL_TYPE as SendEmailType;
-const MAILER_DEFAULT_FROM_EMAIL = process.env.MAILER_DEFAULT_FROM_EMAIL;
-const MAILER_DEFAULT_FROM_NAME = process.env.MAILER_DEFAULT_FROM_NAME;
+
 
 interface MailTemplateData {
   [key: string]: any;
@@ -59,7 +47,7 @@ async function generateSendEmailParams(
   if (fs.pathExists(templateFile)) {
     options.from =
       options.from ||
-      `"${MAILER_DEFAULT_FROM_NAME} ${MAILER_DEFAULT_FROM_EMAIL}"`;
+      `"${env.MAILER_DEFAULT_FROM_NAME} ${env.MAILER_DEFAULT_FROM_EMAIL}"`;
 
     const templateText = (await fs.readFile(templateFile)).toString();
     const template = ejs.compile(templateText);
@@ -122,16 +110,16 @@ export async function sendEmail(
   templateData: MailTemplateData,
   options: SendEmailOptions
 ) {
-  if (MAILER_SEND_EMAIL_TYPE === SendEmailType.Sync) {
+  if (env.MAILER_SEND_EMAIL_TYPE === SendEmailType.Sync) {
     await sendEmailNow(templateName, templateData, options);
-  } else if (MAILER_SEND_EMAIL_TYPE === SendEmailType.Task) {
+  } else if (env.MAILER_SEND_EMAIL_TYPE === SendEmailType.Task) {
     await sendEmailTask(templateName, templateData, options);
   }
 }
 
 const MAX_SEND_EMAIL_ATTEMPTS = 3;
 export async function sendEmailTaskWork() {
-  if (MAILER_SEND_EMAIL_TYPE !== SendEmailType.Task) {
+  if (env.MAILER_SEND_EMAIL_TYPE !== SendEmailType.Task) {
     return;
   }
 
