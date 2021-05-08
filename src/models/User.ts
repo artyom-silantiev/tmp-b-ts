@@ -279,17 +279,3 @@ export async function createUser(email, password, options?): Promise<User> {
 
   return newUser;
 }
-
-(async () => {
-  const user = await prisma.user.findFirst({
-    where: {
-      email: 'admin@example.com'
-    }
-  });
-
-  if (user) {
-    const res = await bcrypt.compare('password', user.passwordHash);
-    console.log(res, user);
-  }
-})();
-
