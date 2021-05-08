@@ -1,5 +1,5 @@
 import * as jwt from 'jsonwebtoken';
-import * as salthash from '@/lib/salthash';
+import * as bcrypt from '@/lib/bcrypt';
 import * as moment from 'moment';
 import * as mailer from '@/lib/mailer';
 import { redisBase } from '@/lib/redis/base';
@@ -141,15 +141,16 @@ export class UserResetPasswordJwt {
   public async checkAndResetPassword(newPassword: string) {
     const user = await this.getUser();
     if (user) {
+      const newPasswordHash = await bcrypt.generatePasswordHash(newPassword);
       await prisma.user.update({
         where: {
           id: user.id
         },
         data: {
-          passwordHash: salthash.generateSaltHash(newPassword)
+          passwordHash: newPasswordHash
         }
       });
-      user.passwordHash = salthash.generateSaltHash(newPassword);
+      user.passwordHash = newPasswordHash;
       return true;
     }
     return false;
@@ -264,7 +265,7 @@ export async function sendResetPasswordLinkNotify (user: User) {
 export async function createUser(email, password, options?): Promise<User> {
   options = options || {};
 
-  const passwordHash = salthash.generateSaltHash(password);
+  const passwordHash = await bcrypt.generatePasswordHash(password);
   const createUserParams = <User>_.merge(
     {
       email,
@@ -278,3 +279,17 @@ export async function createUser(email, password, options?): Promise<User> {
 
   return newUser;
 }
+
+(async () => {
+  const user = await prisma.user.findFirst({
+    where: {
+      email: 'admin@example.com'
+    }
+  });
+
+  if (user) {
+    const res = await bcrypt.compare('password', user.passwordHash);
+    console.log(res, user);
+  }
+})();
+

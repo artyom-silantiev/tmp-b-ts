@@ -25,7 +25,7 @@ CREATE TABLE "User" (
     "role" "UserRole" NOT NULL DEFAULT E'USER',
     "email" VARCHAR(255) NOT NULL,
     "emailActivatedAt" TIMESTAMP(3),
-    "passwordHash" VARCHAR(255) NOT NULL,
+    "passwordHash" VARCHAR(72) NOT NULL,
     "firstName" VARCHAR(64) NOT NULL DEFAULT E'',
     "lastName" VARCHAR(64) NOT NULL DEFAULT E'',
     "avatarId" BIGINT,

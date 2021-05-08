@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import Validator, { vlChecks } from '../lib/validator';
 import * as jwt from 'jsonwebtoken';
-import * as salthash from '../lib/salthash';
+import * as bcrypt from '../lib/bcrypt';
 import * as multer from 'multer';
 import * as db from '@/models';
 
@@ -94,7 +94,8 @@ export async function changePassword (req: Request, res: Response) {
     return res.status(404).send();
   }
 
-  if (!salthash.compare(oldPassword, user.passwordHash)) {
+  const passwordIsCompare = await bcrypt.compare(oldPassword, user.passwordHash);
+  if (!passwordIsCompare) {
     return res
       .status(400)
       .json(Validator.singleError('oldPassword', 'fieldInvalid'));
@@ -105,7 +106,7 @@ export async function changePassword (req: Request, res: Response) {
       id: user.id
     },
     data: {
-      passwordHash: salthash.generateSaltHash(newPassword)
+      passwordHash: await bcrypt.generatePasswordHash(newPassword)
     }
   });
 

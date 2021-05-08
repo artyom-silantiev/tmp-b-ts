@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
 import Validator, { vlChecks } from '../lib/validator';
-import * as jwt from 'jsonwebtoken';
-import * as salthash from '../lib/salthash';
-import * as multer from 'multer';
+import * as bcrypt from '../lib/bcrypt';
 import * as db from '../models';
 import { Image, User } from '.prisma/client';
 
@@ -115,7 +113,8 @@ export async function login (req: Request, res: Response) {
     }
   }) as User & { Avatar?: Image };
 
-  if (!user || !salthash.compare(password, user.passwordHash)) {
+  const passwordIsCompare = await bcrypt.compare(password, user.passwordHash);
+  if (!user || !passwordIsCompare) {
     return res
       .status(400)
       .json(Validator.singleError('email', 'userNotFoundOrBadPassword'));

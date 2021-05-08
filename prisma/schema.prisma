@@ -21,7 +21,7 @@ model User {
   role              UserRole        @default(USER)
   email             String          @unique @db.VarChar(255)
   emailActivatedAt  DateTime?
-  passwordHash      String          @db.VarChar(255)
+  passwordHash      String          @db.VarChar(72)
   firstName         String          @default("") @db.VarChar(64)
   lastName          String          @default("") @db.VarChar(64)
   Avatar            Image?          @relation(fields: [avatarId], references: [id])

@@ -1,5 +1,5 @@
 import { PrismaClient, UserRole } from '@prisma/client';
-import * as salthash from '@/lib/salthash';
+import * as bcrypt from '@/lib/bcrypt';
 
 export default async function (argv) {
   const prisma = new PrismaClient();
@@ -7,7 +7,7 @@ export default async function (argv) {
   await prisma.user.create({
     data: {
       email: 'admin@example.com',
-      passwordHash: salthash.generateSaltHash('password'),
+      passwordHash: await bcrypt.generatePasswordHash('password'),
       role: UserRole.ADMIN,
       firstName: 'Admin',
       lastName: 'Power',
