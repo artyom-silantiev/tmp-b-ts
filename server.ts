@@ -7,8 +7,6 @@ import { redisBase } from '@/lib/redis/base';
 import AppRouter from '@/routes/index';
 import { sendEmailTaskWork } from '@/lib/mailer';
 import { sleep } from '@/lib/utils';
-import * as fs from 'fs-extra';
-import * as path from 'path';
 
 async function serverStart() {
   const redisClient = redisBase.getClient();
@@ -16,12 +14,6 @@ async function serverStart() {
   const keys = await redisClient.keys('*');
   for (let key of keys) {
     await redisClient.del(key);
-  }
-
-  // mkdirs ./public/images/users_avatars
-  const usersAvatarsDir = path.join(process.cwd(), 'public', 'images', 'users_avatars');
-  if (!(await fs.pathExists(usersAvatarsDir))) {
-    await fs.mkdirs(usersAvatarsDir);
   }
 
   const app = express();
