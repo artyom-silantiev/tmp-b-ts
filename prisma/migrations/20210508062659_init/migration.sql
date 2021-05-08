@@ -29,7 +29,6 @@ CREATE TABLE "User" (
     "firstName" VARCHAR(64) NOT NULL DEFAULT E'',
     "lastName" VARCHAR(64) NOT NULL DEFAULT E'',
     "avatarId" BIGINT,
-    "lalala" VARCHAR(16) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

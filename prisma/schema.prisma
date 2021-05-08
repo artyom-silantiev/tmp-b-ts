@@ -27,7 +27,7 @@ model User {
   Avatar            Image?          @relation(fields: [avatarId], references: [id])
   avatarId          BigInt?
   Autorizations     Authorization[]
-  lalala            String          @db.VarChar(16)
+
 
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt

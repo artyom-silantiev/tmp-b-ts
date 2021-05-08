@@ -1,6 +1,5 @@
 import * as crypto from 'crypto';
 import * as fs from 'fs-extra';
-import * as ffmpeg from 'fluent-ffmpeg';
 
 export function getRandomString(len?) {
   let str = '';
@@ -58,6 +57,8 @@ export function shuffle(array: Array<any>) {
   return array;
 }
 
+/*
+import * as ffmpeg from 'fluent-ffmpeg';
 export async function probe (file) {
   return <ffmpeg.FfprobeData> await new Promise((resolve, reject) => {
     ffmpeg.ffprobe(file, (err, data) => {
@@ -69,6 +70,7 @@ export async function probe (file) {
     });
   });
 }
+*/
 
 export function durationFormat (value: number | string) {
   value = typeof value === 'string' ? parseFloat(value) : value;

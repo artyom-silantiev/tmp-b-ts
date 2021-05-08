@@ -45,5 +45,14 @@ npx prisma migrate dev
 ```sh
 npx prisma migrate dev --name <name>
 ```
+## prisma generate (update types)
+```sh
+prisma generate
+```
 ## migrations docs
 https://www.prisma.io/docs/guides/application-lifecycle/developing-with-prisma-migrate/advanced-migrate-scenarios
+
+# db seeds
+```sh
+npx ts-node -r tsconfig-paths/register cmd.ts db/seeds/0001_CreateAdmin.ts
+```

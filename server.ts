@@ -2,8 +2,6 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 import env, { SendEmailType } from '@/env';
 
-console.log(env);
-
 import * as express from 'express';
 import { redisBase } from '@/lib/redis/base';
 import AppRouter from '@/routes/index';
