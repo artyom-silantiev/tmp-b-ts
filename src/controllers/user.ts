@@ -37,6 +37,7 @@ export async function logout (req: Request, res: Response) {
  */
 export async function activateJwt (req: Request, res: Response) {
   const activateJwt = req.params['activateJwt'];
+  
   if (activateJwt) {
     const decoded = db.models.User.verifyJwtToken(activateJwt);
     if (decoded) {

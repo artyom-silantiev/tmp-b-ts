@@ -9,7 +9,7 @@ const prisma = db.getPrisma();
 /**
  * @method post
  */
-export async function create (req: Request, res: Response) {
+export async function userCreate (req: Request, res: Response) {
   let validationResult = await new Validator([
     {
       field: 'email',
@@ -79,7 +79,7 @@ export async function create (req: Request, res: Response) {
 /**
  * @method post
  */
-export async function login (req: Request, res: Response) {
+export async function userLogin (req: Request, res: Response) {
   let validationResult = await new Validator([
     {
       field: 'email',

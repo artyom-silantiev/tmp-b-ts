@@ -13,7 +13,7 @@ const waitPreviewImagePromises = {};
 
 const redisSub = redisBase.getClientSubscribe();
 redisSub.subscribe('create_image_preview_task', 'create_image_preview_done');
-redisSub.redis.on('message', async (channel, taskKey) => {
+redisSub.nodeRedis.on('message', async (channel, taskKey) => {
   if (
     channel === 'create_image_preview_task' &&
     env.IMAGE_ENABLED_CREATE_IMAGE_TASK

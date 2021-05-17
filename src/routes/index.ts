@@ -2,25 +2,25 @@ import * as express from 'express';
 import * as path from 'path';
 import { UserJwt } from '@/models/User';
 import * as cookieParser from 'cookie-parser';
-import { wrap, cacheControlMiddleware, parseAuthorizationMiddleware } from './lib';
+import { cacheControlMiddleware, parseAuthorizationMiddleware } from './lib';
 import acl from '../lib/acl';
 import { UserRole } from '@prisma/client';
 
-import * as ImageController from '../controllers/ImageController';
-import * as SiteMapController from '../controllers/SiteMapController';
+import * as ImageController from '../controllers/image';
+import * as SiteMapController from '../controllers/sitemap';
 
-import * as GuestController from '../controllers/GuestController';
-import * as UserController from '../controllers/UserController';
-import * as SettingController from '../controllers/SettingController';
-import * as PageController from '../controllers/PageController';
-import * as PublicationsController from '../controllers/PublicationController';
+import * as GuestController from '../controllers/guest';
+import * as UserController from '../controllers/user';
+import * as SettingController from '../controllers/setting';
+import * as PageController from '../controllers/page';
+import * as PublicationsController from '../controllers/publication';
 
-import * as AdminSystemInfoController from '../controllers/admin/SystemInfoController';
-import * as AdminSettingController from '../controllers/admin/SettingController';
-import * as AdminUserController from '../controllers/admin/UserController';
-import * as AdminPageController from '../controllers/admin/PageController';
-import * as AdminImageController from '../controllers/admin/ImageController';
-import * as AdminPublicationController from '../controllers/admin/PublicationController';
+import * as AdminSystemInfoController from '../controllers/admin/system_info';
+import * as AdminSettingController from '../controllers/admin/setting';
+import * as AdminUserController from '../controllers/admin/user';
+import * as AdminPageController from '../controllers/admin/page';
+import * as AdminImageController from '../controllers/admin/image';
+import * as AdminPublicationController from '../controllers/admin/publication';
 
 const cwd = process.cwd();
 
@@ -47,25 +47,26 @@ function apiRouter () {
 
   function adminRouter () {
     const router = express.Router();
+
     router.use(acl.allow(UserRole.ADMIN));
 
-    router.get    ('/system_info', wrap(AdminSystemInfoController.getSystemInfo));
+    router.get    ('/system_info', AdminSystemInfoController.getSystemInfo);
 
-    router.get    ('/setting/all', wrap(AdminSettingController.getAll));
-    router.get    ('/setting/by_name', wrap(AdminSettingController.getByName));
-    router.post   ('/setting/change', wrap(AdminSettingController.change));
+    router.get    ('/setting/all', AdminSettingController.getAll);
+    router.get    ('/setting/by_name', AdminSettingController.getByName);
+    router.post   ('/setting/change', AdminSettingController.change);
 
-    router.get    ('/user/list', wrap(AdminUserController.getList));
-    router.post   ('/user/create', wrap(AdminUserController.getList));
-    router.get    ('/user/byid/:id', wrap(AdminUserController.getById));
+    router.get    ('/users', AdminUserController.getList);
+    router.post   ('/users', AdminUserController.getList);
+    router.get    ('/users/:id', AdminUserController.getById);
 
-    router.post   ('/page/change', wrap(AdminPageController.change));
+    router.put    ('/page', AdminPageController.put);
 
-    router.get    ('/image/list', wrap(AdminImageController.getList));
-    router.post   ('/image/upload', AdminImageController.uploadMiddleware(), wrap(AdminImageController.upload));
+    router.get    ('/image/list', AdminImageController.getList);
+    router.post   ('/image/upload', AdminImageController.uploadMiddleware(), AdminImageController.upload);
 
-    router.put    ('/publication', wrap(AdminPublicationController.put));
-    router.delete ('/publication/:id', wrap(AdminPublicationController.deleteById));
+    router.put    ('/publication', AdminPublicationController.put);
+    router.delete ('/publication/:id', AdminPublicationController.deleteById);
 
     return router;
   }
@@ -73,13 +74,14 @@ function apiRouter () {
 
   function guestRouter () {
     const router = express.Router();
+
     router.use(acl.allow(UserRole.GUEST));
 
-    router.post  ('/create', wrap(GuestController.create));
-    router.post  ('/login', wrap(GuestController.login));
-    router.get   ('/reset_password_info', wrap(GuestController.resetPasswordInfo));
-    router.get   ('/request_password_reset_link', wrap(GuestController.requestPasswordResetLink));
-    router.post  ('/reset_password', wrap(GuestController.resetPassword));
+    router.post  ('/user_create', GuestController.userCreate);
+    router.post  ('/user_login', GuestController.userLogin);
+    router.get   ('/reset_password_info', GuestController.resetPasswordInfo);
+    router.get   ('/request_password_reset_link', GuestController.requestPasswordResetLink);
+    router.post  ('/reset_password', GuestController.resetPassword);
 
     return router;
   }
@@ -87,15 +89,16 @@ function apiRouter () {
 
   function userRouter () {
     const router = express.Router();
+
     router.use(acl.deny(UserRole.GUEST));
 
-    router.get   ('', wrap(UserController.getCurrent));
-    router.post  ('/logout', wrap(UserController.logout));
-    router.get   ('/activate/:activateJwt', wrap(UserController.activateJwt));
-    router.post  ('/change_password', wrap(UserController.changePassword));
-    router.post  ('/upload_avatar', UserController.uploadAvatarMiddleware(), wrap(UserController.uploadAvatar));
-    router.post  ('/settings_update', wrap(UserController.settingsUpdate));
-    router.get   ('/byid/:id', wrap(UserController.getById));
+    router.get   ('', UserController.getCurrent);
+    router.post  ('/logout', UserController.logout);
+    router.get   ('/activate/:activateJwt', UserController.activateJwt);
+    router.post  ('/change_password', UserController.changePassword);
+    router.post  ('/upload_avatar', UserController.uploadAvatarMiddleware(), UserController.uploadAvatar);
+    router.post  ('/settings_update', UserController.settingsUpdate);
+    router.get   ('/byid/:id', UserController.getById);
 
     return router;
   }
@@ -104,22 +107,20 @@ function apiRouter () {
   function publicRouter () {
     const router = express.Router();
 
-    router.get  ('/setting/front_collection', wrap(SettingController.getFrontCollection));
+    router.get  ('/setting/front_collection', SettingController.getFrontCollection);
 
-    router.get  ('/page/by_name/:name', wrap(PageController.getByName));
+    router.get  ('/page/by_name/:name', PageController.getByName);
 
-    router.get  ('/publication/list', wrap(PublicationsController.getFetchList));
-    router.get  ('/publication/:id', wrap(PublicationsController.getById));
+    router.get  ('/publication/list', PublicationsController.getFetchList);
+    router.get  ('/publication/:id', PublicationsController.getById);
 
     return router;
   }
   apiRouter.use(publicRouter());
 
   apiRouter.use((error, req, res, next) => {
-    console.log(error);  
-    res.status(500).json({
-      error: error,
-    });
+    console.log(error);
+    res.status(500).send('');
   });
 
   return apiRouter;
@@ -127,8 +128,8 @@ function apiRouter () {
 
 router.use('/api', apiRouter());
 
-router.get('/sitemap.xml', wrap(SiteMapController.getSiteMapXml));
-router.get('/image/:uuid', wrap(ImageController.getImageByUuid));
+router.get('/sitemap.xml', SiteMapController.getSiteMapXml);
+router.get('/image/:uuid', ImageController.getImageByUuid);
 
 router.use(express.static(path.resolve(cwd, 'public')));
 

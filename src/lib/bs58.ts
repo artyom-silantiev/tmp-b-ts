@@ -58,15 +58,15 @@ export default class Bs58 {
     const addres58 = this.fromInt(addressInt);
     const ts58 = this.fromInt(Date.now());
     const rnd58 = this.getRandomBs58String(4);
-    const crInt = Date.now() % 58;
-    const crChar = this.fromInt(crInt);
+    const cryptoInt = Date.now() % 58;
+    const cryptoChar = this.fromInt(cryptoInt);
     const bs58str =
       rnd58[0] + pid58 + rnd58[1] + addres58 + rnd58[2] + ts58 + rnd58[3];
-    let res = crChar;
+    let res = cryptoChar;
     for (let i = 0; i < bs58str.length; i++) {
       const char = bs58str[i];
       const charIndex = ALPHABET.indexOf(char);
-      res = res + ALPHABET[(charIndex + crInt + i * 3) % 58];
+      res = res + ALPHABET[(charIndex + cryptoInt + i * 3) % 58];
     }
     return res;
   }

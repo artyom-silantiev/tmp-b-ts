@@ -9,20 +9,6 @@ export interface FetchParamsBase {
   sortDesc: boolean | null;
 }
 
-interface RouteHandle {
-  (req: express.Request, res: express.Response): Promise<void|any> | void|any
-}
-
-export function wrap (route: RouteHandle) {
-  return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    try {
-      await route(req, res);
-    } catch (error) {
-      next(error);
-    }
-  }
-}
-
 export async function cacheControlMiddleware (req: express.Request, res: express.Response, next: express.NextFunction) {
   res.header('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.header('Pragma', 'no-cache');

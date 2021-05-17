@@ -54,12 +54,22 @@ export async function setPage(name: string, data: any) {
   });
 
   if (!page) {
-    page = await this.create({
-      name
+    await prisma.page.create({
+      data: {
+        name,
+        data
+      }
     });
+  } else {
+    await prisma.page.update({
+      where: {
+        id: page.id
+      },
+      data: {
+        data
+      }
+    })
   }
 
-  page.data = data;
-  this.save(page);
   await redisClient.del('db:pages:' + name);
 }

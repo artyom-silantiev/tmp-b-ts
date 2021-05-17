@@ -67,8 +67,7 @@ function toPath (envParam: string, defaultPathValue) {
 }
 
 export default {
-  ENV: toEnum(env.ENV, Object.values(EnvType), EnvType.development) as EnvType,
-
+  NODE_ENV: toEnum(env.NODE_ENV, Object.values(EnvType), EnvType.development) as EnvType,
   NODE_PORT: toInt(env.NODE_PORT, 3000),
   NODE_HOST: toString(env.NODE_HOST, 'localhost'),
   NODE_PROTOCOL: toString(env.NODE_PROTOCOL, 'http:'),
