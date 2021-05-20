@@ -150,4 +150,9 @@ router.get('/404', (req, res, next) => {
   next();
 });
 
+router.use((error, req, res, next) => {
+  console.log(error);
+  res.status(500).send('');
+});
+
 export default router;
