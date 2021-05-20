@@ -28,7 +28,6 @@ model User {
   avatarId          BigInt?
   Autorizations     Authorization[]
 
-
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 }

@@ -13,8 +13,8 @@ export async function getAll (req: Request, res: Response) {
   );
 }
 
-export async function getByName (req: Request, res: Response) {
-  const settingName = req.query.name as string;
+export async function getByNameParam (req: Request, res: Response) {
+  const settingName = req.params.name as string;
   const setting = await prisma.setting.findFirst({
     where: {
       name: settingName

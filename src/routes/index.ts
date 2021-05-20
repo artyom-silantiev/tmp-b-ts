@@ -52,21 +52,21 @@ function apiRouter () {
 
     router.get    ('/system_info', AdminSystemInfoController.getSystemInfo);
 
-    router.get    ('/setting/all', AdminSettingController.getAll);
-    router.get    ('/setting/by_name', AdminSettingController.getByName);
-    router.post   ('/setting/change', AdminSettingController.change);
+    router.get    ('/settings', AdminSettingController.getAll);
+    router.post   ('/settings', AdminSettingController.change);
+    router.get    ('/settings/:name', AdminSettingController.getByNameParam);
 
     router.get    ('/users', AdminUserController.getList);
-    router.post   ('/users', AdminUserController.getList);
+    router.post   ('/users', AdminUserController.create);
     router.get    ('/users/:id', AdminUserController.getById);
 
-    router.put    ('/page', AdminPageController.put);
+    router.put    ('/pages', AdminPageController.put);
 
-    router.get    ('/image/list', AdminImageController.getList);
-    router.post   ('/image/upload', AdminImageController.uploadMiddleware(), AdminImageController.upload);
+    router.get    ('/images', AdminImageController.getList);
+    router.post   ('/images', AdminImageController.uploadMiddleware(), AdminImageController.upload);
 
-    router.put    ('/publication', AdminPublicationController.put);
-    router.delete ('/publication/:id', AdminPublicationController.deleteById);
+    router.put    ('/publications', AdminPublicationController.put);
+    router.delete ('/publications/:id', AdminPublicationController.deleteById);
 
     return router;
   }
@@ -98,7 +98,7 @@ function apiRouter () {
     router.post  ('/change_password', UserController.changePassword);
     router.post  ('/upload_avatar', UserController.uploadAvatarMiddleware(), UserController.uploadAvatar);
     router.post  ('/settings_update', UserController.settingsUpdate);
-    router.get   ('/byid/:id', UserController.getById);
+    router.get   ('/user_byid/:id', UserController.getById);
 
     return router;
   }
@@ -107,12 +107,12 @@ function apiRouter () {
   function publicRouter () {
     const router = express.Router();
 
-    router.get  ('/setting/front_collection', SettingController.getFrontCollection);
+    router.get  ('/settings/front_collection', SettingController.getFrontCollection);
 
-    router.get  ('/page/by_name/:name', PageController.getByName);
+    router.get  ('/pages/by_name/:name', PageController.getByName);
 
-    router.get  ('/publication/list', PublicationsController.getFetchList);
-    router.get  ('/publication/:id', PublicationsController.getById);
+    router.get  ('/publications', PublicationsController.getFetchList);
+    router.get  ('/publications/:id', PublicationsController.getById);
 
     return router;
   }
@@ -129,7 +129,7 @@ function apiRouter () {
 router.use('/api', apiRouter());
 
 router.get('/sitemap.xml', SiteMapController.getSiteMapXml);
-router.get('/image/:uuid', ImageController.getImageByUuid);
+router.get('/images/:uuid', ImageController.getImageByUuid);
 
 router.use(express.static(path.resolve(cwd, 'public')));
 
