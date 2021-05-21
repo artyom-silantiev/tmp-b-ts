@@ -56,5 +56,3 @@ https://www.prisma.io/docs/guides/application-lifecycle/developing-with-prisma-m
 ```sh
 npx ts-node -r tsconfig-paths/register cmd.ts db/seeds/0001_CreateAdmin.ts
 ```
-
-# TEST TEXT FOR GIT
