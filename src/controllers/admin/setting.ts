@@ -49,7 +49,7 @@ export async function change (req: Request, res: Response) {
     data: {
       value: settingValue
     }
-  })
+  });
 
   // clear cache
   await redisBase.getClient().del('db:settings:' + setting.name);

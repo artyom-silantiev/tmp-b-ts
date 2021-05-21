@@ -6,7 +6,7 @@ import * as _ from 'lodash';
  
 const prisma = db.getPrisma();
 
-export async function getList (req: Request, res: Response) {
+export async function getFetchList (req: Request, res: Response) {
   const grid = new Grid(req.query as IGridParams)
     .setSortOptions([
       'id',

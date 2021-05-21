@@ -56,13 +56,13 @@ function apiRouter () {
     router.post   ('/settings', AdminSettingController.change);
     router.get    ('/settings/:name', AdminSettingController.getByNameParam);
 
-    router.get    ('/users', AdminUserController.getList);
+    router.get    ('/users', AdminUserController.getFetchList);
     router.post   ('/users', AdminUserController.create);
     router.get    ('/users/:id', AdminUserController.getById);
 
     router.put    ('/pages', AdminPageController.put);
 
-    router.get    ('/images', AdminImageController.getList);
+    router.get    ('/images', AdminImageController.getFetchList);
     router.post   ('/images', AdminImageController.uploadMiddleware(), AdminImageController.upload);
 
     router.put    ('/publications', AdminPublicationController.put);

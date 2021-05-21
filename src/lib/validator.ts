@@ -94,8 +94,7 @@ export class CustomChecks {
 
   public static isAdultManBirtchDateFormat(value: string, dateFormat: string) {
     return this.isDate(value, dateFormat, {
-      offsetForMin: { num: -100, unit: 'years' },
-      offsetForMax: { num: -18, unit: 'years' },
+      offsetForMax: { num: -18, unit: 'years' }
     });
   }
 
@@ -111,7 +110,7 @@ export class CustomChecks {
     var recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify?';
     recaptcha_url += 'secret=' + env.GOOGLE_RECAPTCHA + '&';
     recaptcha_url += 'response=' + value + '&';
-    recaptcha_url += 'remoteip=' + req.connection.remoteAddress;
+    recaptcha_url += 'remoteip=' + req.socket.remoteAddress;
 
     try {
       const res = await axios.get(recaptcha_url);
