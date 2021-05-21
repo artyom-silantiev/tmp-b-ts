@@ -24,12 +24,13 @@ model User {
   passwordHash      String          @db.VarChar(72)
   firstName         String          @default("") @db.VarChar(64)
   lastName          String          @default("") @db.VarChar(64)
-  Avatar            Image?          @relation(fields: [avatarId], references: [id])
   avatarId          BigInt?
-  Autorizations     Authorization[]
 
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
+
+  Avatar            Image?          @relation(fields: [avatarId], references: [id])
+  Autorizations     Authorization[]
 }
 
 enum ImageLocation {
@@ -135,8 +136,9 @@ model Authorization {
   tokenUid          String              @unique @db.VarChar(24)
   expirationAt      DateTime
   userId            BigInt
-  User              User                @relation(fields: [userId], references: [id])
 
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
+
+  User              User                @relation(fields: [userId], references: [id])
 }
