@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as multer from 'multer';
 import * as db from '@/models';
-import Grid, { IGridParams } from '@/lib/grid';
+import Grid, { GridParams } from '@/lib/classes/grid';
 import * as _ from 'lodash';
 import { Image } from '.prisma/client';
 import { ImageMeta } from '@/models/Image';
@@ -9,7 +9,7 @@ import { ImageMeta } from '@/models/Image';
 const prisma = db.getPrisma();
 
 export async function getFetchList (req: Request, res: Response) {
-  const grid = new Grid(req.query as IGridParams)
+  const grid = new Grid(req.query as GridParams)
     .setSortOptions(['id', 'sha256', 'createdAt'])
     .init();
 

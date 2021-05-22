@@ -23,15 +23,24 @@ export interface ImageMeta {
   thumbs: number[];
 }
 
-export function getPublicPath (image: Image) {
-  if (image.location === ImageLocation.LOCAL) {
-    return '/image/' + image.uuid;
-  }
-}
+export default class ImageModel {
+  model: Image;
 
-export async function putImageAndGetRefInfo (imageFileOrBuf: string | Buffer):
-    Promise<StandardResult<Image>>
-  {
+  constructor (model: Image) {
+    this.model = model;
+  }
+
+  static wrap (model: Image) {
+    return new ImageModel(model);
+  }
+
+  getPublicPath () {
+    if (this.model.location === ImageLocation.LOCAL) {
+      return '/image/' + this.model.uuid;
+    }
+  }
+
+  static async putImageAndGetRefInfo (imageFileOrBuf: string | Buffer): Promise<StandardResult<Image>> {
     if (typeof imageFileOrBuf === 'string') {
       if (!await fs.pathExists(imageFileOrBuf)) {
         throw new Error('File not found');
@@ -107,3 +116,4 @@ export async function putImageAndGetRefInfo (imageFileOrBuf: string | Buffer):
 
     return standardResult.setCode(201).setData(newImage);
   }
+}

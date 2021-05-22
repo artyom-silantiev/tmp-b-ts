@@ -1,1 +1,0 @@
-import { getPrisma } from './index';

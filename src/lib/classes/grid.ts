@@ -1,4 +1,4 @@
-export interface IGridParams {
+export interface GridParams {
   page?: string;
   pageSize?: string;
   sortBy?: string;
@@ -13,10 +13,10 @@ export default class Grid {
   public sortBy: string | null;
   public sortDesc: boolean;
 
-  private gridParams: IGridParams;
+  private gridParams: GridParams;
   private sortParams;
 
-  constructor(gridParams: IGridParams) {
+  constructor(gridParams: GridParams) {
     this.gridParams = gridParams;
   }
 
@@ -26,17 +26,17 @@ export default class Grid {
   }
 
   public init() {
-    const object = this.gridParams;
+    const params = this.gridParams;
 
     // page num
-    this.page = typeof object.page === 'string' ? parseInt(object.page) : 1;
+    this.page = typeof params.page === 'string' ? parseInt(params.page) : 1;
     if (!Number.isInteger(this.page) || this.page <= 0) {
       this.page = 1;
     }
 
     // page size
     this.pageSize =
-      typeof object.pageSize === 'string' ? parseInt(object.pageSize) : 20;
+      typeof params.pageSize === 'string' ? parseInt(params.pageSize) : 20;
     if (!Number.isInteger(this.pageSize) || this.pageSize <= 0) {
       this.pageSize = 20;
     }
@@ -44,17 +44,17 @@ export default class Grid {
     this.take = this.pageSize;
 
     // sortBy
-    if (typeof object.sortBy === 'string') {
-      this.sortBy = object.sortBy;
+    if (typeof params.sortBy === 'string') {
+      this.sortBy = params.sortBy;
       if (this.sortBy && this.sortParams.indexOf(this.sortBy) === -1) {
         this.sortBy = null;
       }
     }
 
     // sortDesc
-    if (typeof object.sortDesc === 'string') {
+    if (typeof params.sortDesc === 'string') {
       this.sortDesc =
-        ['1', 'true'].indexOf(object.sortDesc) !== -1 ? true : false;
+        ['1', 'true'].indexOf(params.sortDesc) !== -1 ? true : false;
     }
 
     return this;

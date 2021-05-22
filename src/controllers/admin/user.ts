@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
 import * as db from '@/models';
 import Validator, { vlChecks } from '@/lib/validator';
-import Grid, { IGridParams } from '@/lib/grid';
+import Grid, { GridParams } from '@/lib/classes/grid';
 import * as _ from 'lodash';
  
 const prisma = db.getPrisma();
 
 export async function getFetchList (req: Request, res: Response) {
-  const grid = new Grid(req.query as IGridParams)
+  const grid = new Grid(req.query as GridParams)
     .setSortOptions([
       'id',
       'role',
@@ -92,7 +92,7 @@ export async function getFetchList (req: Request, res: Response) {
   res.json({
     page: grid.page,
     pageSize: grid.pageSize,
-    rows: rows.map((row) => db.models.User.publicInfo(row)),
+    rows: rows.map((row) => db.models.User.wrap(row).publicInfo()),
     totalRows: totalRows
   });
 }
@@ -153,7 +153,7 @@ export async function create (req: Request, res: Response) {
     }
   );
 
-  res.status(201).json({ user: db.models.User.publicInfo(newUser) });
+  res.status(201).json({ user: db.models.User.wrap(newUser).publicInfo() });
 }
 
 /**
@@ -175,5 +175,5 @@ export async function getById (req: Request, res: Response) {
     });
   }
 
-  res.json(db.models.User.publicInfo(user));
+  res.json(db.models.User.wrap(user).publicInfo());
 }

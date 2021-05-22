@@ -1,18 +1,18 @@
 export { getPrisma } from './prisma';
-import * as User from './User';
-import * as Task from './Task';
-import * as Setting from './Setting';
-import * as Page from './Page';
-import * as News from './News';
-import * as Image from './Image';
-import * as Authorization from './Authorization';
+import User from './User';
+import Task from './Task';
+import Setting from './Setting';
+import Page from './Page';
+import Publication from './Publication';
+import Image from './Image';
+import Authorization from './Authorization';
 
 export const models = {
   User,
   Task,
   Setting,
   Page,
-  News,
+  Publication,
   Image,
   Authorization
 };

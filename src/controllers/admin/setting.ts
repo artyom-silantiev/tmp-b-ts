@@ -8,7 +8,7 @@ export async function getAll (req: Request, res: Response) {
   const settings = await prisma.setting.findMany();
   res.json(
     settings.map((row) => {
-      return db.models.Setting.toShort(row);
+      return db.models.Setting.wrap(row).toShort();
     })
   );
 }
@@ -25,7 +25,7 @@ export async function getByNameParam (req: Request, res: Response) {
     return res.status(404).send('not found');
   }
 
-  res.json(db.models.Setting.toShort(setting));
+  res.json(db.models.Setting.wrap(setting).toShort());
 }
 
 export async function change (req: Request, res: Response) {

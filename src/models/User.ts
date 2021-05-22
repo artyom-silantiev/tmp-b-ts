@@ -9,7 +9,7 @@ import env from '@/env';
 
 import { UserRole, User, Image } from '@prisma/client';
 import { getPrisma } from './index';
-import { getPublicPath } from './Image';
+import ImageModel from './Image';
 
 export { getPrisma } from './index';
 
@@ -23,6 +23,14 @@ export class UserJwt {
 
   constructor (token: string) {
     this.token = token;
+  }
+
+  static verifyJwtToken (token: string) {
+    const decoded = jwt.verify(
+      token,
+      env.JWT_SECRET
+    );
+    return decoded;
   }
 
   async logout() {
@@ -157,125 +165,129 @@ export class UserResetPasswordJwt {
   }
 }
 
-export async function generateAuthorizationForUser (user: User, expiresInSec?: number) {
-  expiresInSec = expiresInSec || 60 * 60;
+export default class UserModel {
+  model: User & { Avatar?: Image };
 
-  const uid = Bs58.uuid();
+  constructor (model: User & { Avatar?: Image }) {
+    this.model = model;
+  }
 
-  let token = jwt.sign(
-    {
-      uid,
-      userId: user.id,
-      role: user.role,
-    },
-    env.JWT_SECRET,
-    { expiresIn: expiresInSec }
-  );
+  static wrap (model: User & { Avatar?: Image }) {
+    return new UserModel(model);
+  }
 
-  const expirationAt = new Date(Math.floor(Date.now() + expiresInSec * 1000));
-  const authorization = await prisma.authorization.create({
-    data: {
-      userId: user.id,
-      tokenUid: uid,
-      expirationAt
-    }
-  });
+  async generateAuthorizationForUser (expiresInSec?: number) {
+    expiresInSec = expiresInSec || 60 * 60;
 
-  return {token, authorization};
-}
+    const uid = Bs58.uuid();
 
-export async function verifyJwtToken (token: string) {
-  const decoded = await jwt.verify(
-    token,
-    env.JWT_SECRET
-  );
-  return decoded;
-}
+    let token = jwt.sign(
+      {
+        uid,
+        userId: this.model.id,
+        role: this.model.role,
+      },
+      env.JWT_SECRET,
+      { expiresIn: expiresInSec }
+    );
 
-export function publicInfo (user: User & { Avatar?: Image }) {
-  return {
-    id: user.id,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    role: user.role,
-    avatar: user.Avatar ? getPublicPath(user.Avatar) : null,
-    createdAt: user.createdAt,
-    isActivated: !!user.emailActivatedAt,
-  };
-}
+    const expirationAt = new Date(Math.floor(Date.now() + expiresInSec * 1000));
+    const authorization = await prisma.authorization.create({
+      data: {
+        userId: this.model.id,
+        tokenUid: uid,
+        expirationAt
+      }
+    });
 
-export function privateInfo (user: User & { Avatar?: Image }) {
-  const info = this.publicInfo(user);
-  return info;
-}
+    return {token, authorization};
+  }
 
-export async function sendRegisterNotify(user: User) {
-  const activateEmailCode = jwt.sign(
-    {
-      userId: user.id.toString(),
-      email: user.email,
-    },
-    env.JWT_SECRET
-  );
+  publicInfo () {
+    return {
+      id: this.model.id,
+      email: this.model.email,
+      firstName: this.model.firstName,
+      lastName: this.model.lastName,
+      role: this.model.role,
+      avatar: this.model.Avatar ? ImageModel.wrap(this.model.Avatar).getPublicPath() : null,
+      createdAt: this.model.createdAt,
+      isActivated: !!this.model.emailActivatedAt,
+    };
+  }
 
-  const activateEmailLink =
-    env.NODE_PROTOCOL +
-    '//' +
-    env.NODE_HOST +
-    '/api/user/activate/' +
-    activateEmailCode;
+  privateInfo () {
+    const info = this.publicInfo();
+    return info;
+  }
 
-  await mailer.sendEmail(
-    'register.ejs',
-    { activateEmailLink },
-    {
-      to: user.email,
-      subject: 'Регистрация',
-    }
-  );
-}
+  async sendRegisterNotify () {
+    const activateEmailCode = jwt.sign(
+      {
+        userId: this.model.id.toString(),
+        email: this.model.email,
+      },
+      env.JWT_SECRET
+    );
+  
+    const activateEmailLink =
+      env.NODE_PROTOCOL +
+      '//' +
+      env.NODE_HOST +
+      '/api/user/activate/' +
+      activateEmailCode;
+  
+    await mailer.sendEmail(
+      'register.ejs',
+      { activateEmailLink },
+      {
+        to: this.model.email,
+        subject: 'Регистрация',
+      }
+    );
+  }
 
-export async function sendResetPasswordLinkNotify (user: User) {
-  const resetPasswordCode = jwt.sign(
-    {
-      userId: user.id.toString(),
-      passwordHash: user.passwordHash,
-    },
-    env.JWT_SECRET
-  );
+  async sendResetPasswordLinkNotify () {
+    const resetPasswordCode = jwt.sign(
+      {
+        userId: this.model.id.toString(),
+        passwordHash: this.model.passwordHash,
+      },
+      env.JWT_SECRET
+    );
+  
+    const resetPasswordLink =
+      env.NODE_PROTOCOL +
+      '//' +
+      env.NODE_HOST +
+      '/password/reset/' +
+      resetPasswordCode;
+  
+    await mailer.sendEmail(
+      'reset_password_link.ejs',
+      { resetPasswordLink },
+      {
+        to: this.model.email,
+        subject: 'Сброс пароля',
+      }
+    );
+  }
 
-  const resetPasswordLink =
-    env.NODE_PROTOCOL +
-    '//' +
-    env.NODE_HOST +
-    '/password/reset/' +
-    resetPasswordCode;
+  static async createUser (email: string, password: string, options?): Promise<User> {
+    options = options || {};
 
-  await mailer.sendEmail(
-    'reset_password_link.ejs',
-    { resetPasswordLink },
-    {
-      to: user.email,
-      subject: 'Сброс пароля',
-    }
-  );
-}
+    const passwordHash = await bcrypt.generatePasswordHash(password);
+    const createUserParams = <User>_.merge(
+      {
+        email,
+        passwordHash,
+      },
+      options.params || {}
+    );
+    const newUser = await prisma.user.create({
+      data: createUserParams
+    });
 
-export async function createUser(email, password, options?): Promise<User> {
-  options = options || {};
-
-  const passwordHash = await bcrypt.generatePasswordHash(password);
-  const createUserParams = <User>_.merge(
-    {
-      email,
-      passwordHash,
-    },
-    options.params || {}
-  );
-  const newUser = await prisma.user.create({
-    data: createUserParams
-  });
-
-  return newUser;
+    return newUser;
+  }
 }

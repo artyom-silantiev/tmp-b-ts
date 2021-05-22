@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as db from '@/models';
-import Grid from '@/lib/grid';
+import Grid from '@/lib/classes/grid';
 
 const prisma = db.getPrisma();
 

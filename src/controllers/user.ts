@@ -4,6 +4,7 @@ import * as jwt from 'jsonwebtoken';
 import * as bcrypt from '../lib/bcrypt';
 import * as multer from 'multer';
 import * as db from '@/models';
+import { UserActivateJwt, UserJwt } from '@/models/User';
 
 const router = Router();
 const prisma = db.getPrisma();
@@ -17,7 +18,7 @@ export async function getCurrent (req: Request, res: Response) {
   if (req.authorization) {
     let user = await req.authorization.getUser();
     resData.isAuth = true;
-    resData.user = db.models.User.privateInfo(user);
+    resData.user = db.models.User.wrap(user).privateInfo();
   }
 
   res.json(resData);
@@ -39,10 +40,10 @@ export async function activateJwt (req: Request, res: Response) {
   const activateJwt = req.params['activateJwt'];
   
   if (activateJwt) {
-    const decoded = db.models.User.verifyJwtToken(activateJwt);
+    const decoded = UserJwt.verifyJwtToken(activateJwt);
     if (decoded) {
       const activateUserJwt = Object.assign(
-        new db.models.User.UserActivateJwt(),
+        new UserActivateJwt(),
         decoded
       );
       const activateStatus = await activateUserJwt.checkAndActivate();
@@ -233,5 +234,5 @@ export async function getById (req: Request, res: Response) {
     });
   }
 
-  res.json(db.models.User.publicInfo(user));
+  res.json(db.models.User.wrap(user).publicInfo());
 }

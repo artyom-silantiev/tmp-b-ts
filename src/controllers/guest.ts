@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import Validator, { vlChecks } from '../lib/validator';
 import * as bcrypt from '../lib/bcrypt';
 import * as db from '../models';
+import { UserJwt } from '../models/User';
+import { UserResetPasswordJwt } from '../models/User';
 import { Image, User } from '.prisma/client';
 
 const prisma = db.getPrisma();
@@ -72,8 +74,9 @@ export async function userCreate (req: Request, res: Response) {
     email,
     password
   );
-  await db.models.User.sendRegisterNotify(newUser);
-  res.status(201).json({ user: db.models.User.publicInfo(newUser) });
+  const userModel = db.models.User.wrap(newUser);
+  await userModel.sendRegisterNotify();
+  res.status(201).json({ user: userModel.publicInfo() });
 }
 
 /**
@@ -120,11 +123,12 @@ export async function userLogin (req: Request, res: Response) {
       .json(Validator.singleError('email', 'userNotFoundOrBadPassword'));
   }
 
-  let authorization = await db.models.User.generateAuthorizationForUser(user);
+  const userModel = db.models.User.wrap(user);
+  let authorization = await userModel.generateAuthorizationForUser();
 
   res.json({
     token: authorization.token,
-    user: db.models.User.privateInfo(user)
+    user: userModel.privateInfo()
   });
 }
 
@@ -151,10 +155,10 @@ export async function resetPasswordInfo (req: Request, res: Response) {
   }
 
   const resetPasswordCode = req.query['code'];
-  const decoded = db.models.User.verifyJwtToken(resetPasswordCode);
+  const decoded = UserJwt.verifyJwtToken(resetPasswordCode);
   if (decoded) {
     const userResetPasswordJwt = Object.assign(
-      new db.models.User.UserResetPasswordJwt(),
+      new UserResetPasswordJwt(),
       decoded
     );
     const user = await userResetPasswordJwt.getUser();
@@ -201,7 +205,7 @@ export async function requestPasswordResetLink (req: Request, res: Response) {
       .json(Validator.singleError('email', 'userNotFound'));
   }
 
-  await db.models.User.sendResetPasswordLinkNotify(user);
+  await db.models.User.wrap(user).sendResetPasswordLinkNotify();
 
   res.json({});
 }
@@ -243,10 +247,10 @@ export async function resetPassword (req: Request, res: Response) {
   const password = req.body.password;
 
   const resetPasswordCode = req.body['resetPasswordCode'];
-  const decoded = db.models.User.verifyJwtToken(resetPasswordCode);
+  const decoded = UserJwt.verifyJwtToken(resetPasswordCode);
   if (decoded) {
     const userResetPasswordJwt = Object.assign(
-      new db.models.User.UserResetPasswordJwt(),
+      new UserResetPasswordJwt(),
       decoded
     );
     const resetResult = userResetPasswordJwt.checkAndResetPassword(
