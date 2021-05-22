@@ -14,9 +14,6 @@ CREATE TYPE "SettingColection" AS ENUM ('NONE', 'FRONT');
 CREATE TYPE "SettingType" AS ENUM ('STRING', 'INTEGER', 'DESIMAL', 'BOOL', 'TEXT');
 
 -- CreateEnum
-CREATE TYPE "PublicationStatus" AS ENUM ('DRAFT', 'PUBLISH');
-
--- CreateEnum
 CREATE TYPE "PublicationType" AS ENUM ('NONE', 'NEWS', 'ARTICLE');
 
 -- CreateTable
@@ -89,7 +86,7 @@ CREATE TABLE "Page" (
 CREATE TABLE "Publication" (
     "id" BIGSERIAL NOT NULL,
     "type" "PublicationType" NOT NULL DEFAULT E'NONE',
-    "status" "PublicationStatus" NOT NULL DEFAULT E'DRAFT',
+    "isPublished" BOOLEAN NOT NULL DEFAULT false,
     "header" VARCHAR(255) NOT NULL,
     "annotation" JSONB NOT NULL,
     "content" JSONB NOT NULL,
@@ -131,7 +128,7 @@ CREATE INDEX "Setting.name_index" ON "Setting"("name");
 CREATE INDEX "Publication.type_index" ON "Publication"("type");
 
 -- CreateIndex
-CREATE INDEX "Publication.status_index" ON "Publication"("status");
+CREATE INDEX "Publication.isPublished_index" ON "Publication"("isPublished");
 
 -- CreateIndex
 CREATE INDEX "Publication.publishAt_index" ON "Publication"("publishAt");

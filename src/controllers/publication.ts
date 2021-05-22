@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import * as db from '@/models';
 import Grid from '@/lib/grid';
-import { PublicationStatus } from '@prisma/client';
 
 const prisma = db.getPrisma();
 
@@ -11,7 +10,7 @@ export async function getFetchList (req: Request, res: Response) {
 
   const rows = await prisma.publication.findMany({
     where: {
-      status: PublicationStatus.PUBLISH,
+      isPublished: true,
       publishAt: {
         lte: currentDateTime
       }
@@ -24,7 +23,7 @@ export async function getFetchList (req: Request, res: Response) {
   });
   const rowsCount = await prisma.publication.count({
     where: {
-      status: PublicationStatus.PUBLISH,
+      isPublished: true,
       publishAt: {
         lte: currentDateTime
       }
@@ -37,7 +36,7 @@ export async function getFetchList (req: Request, res: Response) {
     rows: rows.map((row) => {
       return {
         id: row.id.toString(),
-        status: row.status,
+        isPublished: row.isPublished,
         header: row.header,
         annotation: row.annotation,
         publishAt: row.publishAt,
@@ -54,7 +53,7 @@ export async function getById (req: Request, res: Response) {
   const newsRow = await prisma.publication.findFirst({
     where: {
       id: BigInt(id),
-      status: PublicationStatus.PUBLISH,
+      isPublished: true,
       publishAt: {
         lte: currentDateTime
       }
@@ -67,7 +66,7 @@ export async function getById (req: Request, res: Response) {
 
   res.json({
     id: newsRow.id.toString(),
-    status: newsRow.status,
+    isPublished: newsRow.isPublished,
     header: newsRow.header,
     annotation: newsRow.annotation,
     content: newsRow.content,

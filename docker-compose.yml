@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
     postgress:
-        container_name: tmp_postgres
+        container_name: postgres
         image: "postgres:13.2"
         restart: always
         environment:
@@ -18,7 +18,7 @@ services:
             - ./data/pgdata:/var/lib/postgresql/data
 
     redis:
-        container_name: tmp_redis
+        container_name: redis
         image: redis
         ports:
             - "6379:6379"

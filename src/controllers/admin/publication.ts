@@ -5,7 +5,7 @@ const prisma = db.getPrisma();
 
 export async function put (req: Request, res: Response) {
   const publicationId = req.body.id;
-  const status = req.body.status;
+  const isPublished = req.body.isPublished;
   const header = req.body.header;
   const annotation = req.body.annotation;
   const content = req.body.content;
@@ -15,7 +15,7 @@ export async function put (req: Request, res: Response) {
     // create
     const newPublication = await prisma.publication.create({
       data: {
-        status,
+        isPublished,
         header,
         annotation,
         content,
@@ -42,7 +42,7 @@ export async function put (req: Request, res: Response) {
         id: BigInt(publicationId)
       }, 
       data: {
-        status,
+        isPublished,
         header,
         annotation,
         content,

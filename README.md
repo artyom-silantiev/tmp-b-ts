@@ -49,7 +49,12 @@ npx prisma migrate dev --name <name>
 ```sh
 prisma generate
 ```
+## prisma reset (ONLY FOR DEV!!!(!!!)) (drop and recreate db from migrations)
+```sh
+npx prisma migrate reset
+```
 ## migrations docs
+https://www.prisma.io/docs/concepts/components/prisma-migrate
 https://www.prisma.io/docs/guides/application-lifecycle/developing-with-prisma-migrate/advanced-migrate-scenarios
 
 # db seeds

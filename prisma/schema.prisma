@@ -103,11 +103,6 @@ model Page {
   updatedAt         DateTime            @updatedAt
 }
 
-enum PublicationStatus {
-  DRAFT
-  PUBLISH
-}
-
 enum PublicationType {
   NONE
   NEWS
@@ -117,7 +112,7 @@ enum PublicationType {
 model Publication {
   id                BigInt              @id @default(autoincrement())
   type              PublicationType     @default(NONE)
-  status            PublicationStatus   @default(DRAFT)
+  isPublished       Boolean             @default(false)
   header            String              @db.VarChar(255)
   annotation        Json
   content           Json
@@ -127,7 +122,7 @@ model Publication {
   updatedAt         DateTime            @updatedAt
 
   @@index([type])
-  @@index([status])
+  @@index([isPublished])
   @@index([publishAt])
 }
 
