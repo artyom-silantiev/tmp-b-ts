@@ -11,8 +11,6 @@ import { UserRole, User, Image } from '@prisma/client';
 import { getPrisma } from './index';
 import ImageModel from './Image';
 
-export { getPrisma } from './index';
-
 const prisma = getPrisma();
 
 export class UserJwt {
