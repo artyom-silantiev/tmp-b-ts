@@ -47,7 +47,7 @@ npx prisma migrate dev --name <name>
 ```
 ## prisma generate (update types)
 ```sh
-prisma generate
+npx prisma generate
 ```
 ## prisma reset (ONLY FOR DEV!!!(!!!)) (drop and recreate db from migrations)
 ```sh
