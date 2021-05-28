@@ -2,7 +2,7 @@ import * as express from 'express';
 import * as path from 'path';
 import { UserJwt } from '@/models/User';
 import * as cookieParser from 'cookie-parser';
-import { cacheControlMiddleware, parseAuthorizationMiddleware } from './lib';
+import { cacheControlMiddleware, parseAuthorizationMiddleware, endPoint } from './lib';
 import acl from '../lib/acl';
 import { UserRole } from '@prisma/client';
 
@@ -50,23 +50,23 @@ function apiRouter () {
 
     router.use(acl.allow(UserRole.ADMIN));
 
-    router.get    ('/system_info', AdminSystemInfoController.getSystemInfo);
+    router.get    ('/system_info', endPoint(AdminSystemInfoController.getSystemInfo));
 
-    router.get    ('/settings', AdminSettingController.getAll);
-    router.post   ('/settings', AdminSettingController.change);
-    router.get    ('/settings/:name', AdminSettingController.getByNameParam);
+    router.get    ('/settings', endPoint(AdminSettingController.getAll));
+    router.post   ('/settings', endPoint(AdminSettingController.change));
+    router.get    ('/settings/:name', endPoint(AdminSettingController.getByNameParam));
 
-    router.get    ('/users', AdminUserController.getFetchList);
-    router.post   ('/users', AdminUserController.create);
-    router.get    ('/users/:id', AdminUserController.getById);
+    router.get    ('/users', endPoint(AdminUserController.getFetchList));
+    router.post   ('/users', endPoint(AdminUserController.create));
+    router.get    ('/users/:id', endPoint(AdminUserController.getById));
 
-    router.put    ('/pages', AdminPageController.put);
+    router.put    ('/pages', endPoint(AdminPageController.put));
 
-    router.get    ('/images', AdminImageController.getFetchList);
-    router.post   ('/images', AdminImageController.uploadMiddleware(), AdminImageController.upload);
+    router.get    ('/images', endPoint(AdminImageController.getFetchList));
+    router.post   ('/images', AdminImageController.uploadMiddleware(), endPoint(AdminImageController.upload));
 
-    router.put    ('/publications', AdminPublicationController.put);
-    router.delete ('/publications/:id', AdminPublicationController.deleteById);
+    router.put    ('/publications', endPoint(AdminPublicationController.put));
+    router.delete ('/publications/:id', endPoint(AdminPublicationController.deleteById));
 
     return router;
   }
@@ -77,11 +77,11 @@ function apiRouter () {
 
     router.use(acl.allow(UserRole.GUEST));
 
-    router.post  ('/user_create', GuestController.userCreate);
-    router.post  ('/user_login', GuestController.userLogin);
-    router.get   ('/reset_password_info', GuestController.resetPasswordInfo);
-    router.get   ('/request_password_reset_link', GuestController.requestPasswordResetLink);
-    router.post  ('/reset_password', GuestController.resetPassword);
+    router.post  ('/user_create', endPoint(GuestController.userCreate));
+    router.post  ('/user_login', endPoint(GuestController.userLogin));
+    router.get   ('/reset_password_info', endPoint(GuestController.resetPasswordInfo));
+    router.get   ('/request_password_reset_link', endPoint(GuestController.requestPasswordResetLink));
+    router.post  ('/reset_password', endPoint(GuestController.resetPassword));
 
     return router;
   }
@@ -92,13 +92,13 @@ function apiRouter () {
 
     router.use(acl.deny(UserRole.GUEST));
 
-    router.get   ('', UserController.getCurrent);
-    router.post  ('/logout', UserController.logout);
-    router.get   ('/activate/:activateJwt', UserController.activateJwt);
+    router.get   ('', endPoint(UserController.getCurrent));
+    router.post  ('/logout', endPoint(UserController.logout));
+    router.get   ('/activate/:activateJwt', endPoint(UserController.activateJwt));
     router.post  ('/change_password', UserController.changePassword);
-    router.post  ('/upload_avatar', UserController.uploadAvatarMiddleware(), UserController.uploadAvatar);
-    router.post  ('/settings_update', UserController.settingsUpdate);
-    router.get   ('/user_byid/:id', UserController.getById);
+    router.post  ('/upload_avatar', UserController.uploadAvatarMiddleware(), endPoint(UserController.uploadAvatar));
+    router.post  ('/settings_update', endPoint(UserController.settingsUpdate));
+    router.get   ('/user_byid/:id', endPoint(UserController.getById));
 
     return router;
   }
@@ -107,29 +107,24 @@ function apiRouter () {
   function publicRouter () {
     const router = express.Router();
 
-    router.get  ('/settings/front_collection', SettingController.getFrontCollection);
+    router.get  ('/settings/front_collection', endPoint(SettingController.getFrontCollection));
 
-    router.get  ('/pages/by_name/:name', PageController.getByName);
+    router.get  ('/pages/by_name/:name', endPoint(PageController.getByName));
 
-    router.get  ('/publications', PublicationsController.getFetchList);
-    router.get  ('/publications/:id', PublicationsController.getById);
+    router.get  ('/publications', endPoint(PublicationsController.getFetchList));
+    router.get  ('/publications/:id', endPoint(PublicationsController.getById));
 
     return router;
   }
   apiRouter.use(publicRouter());
-
-  apiRouter.use((error, req, res, next) => {
-    console.log(error);
-    res.status(500).send('');
-  });
 
   return apiRouter;
 }
 
 router.use('/api', apiRouter());
 
-router.get('/sitemap.xml', SiteMapController.getSiteMapXml);
-router.get('/images/:uuid', ImageController.getImageByUuid);
+router.get('/sitemap.xml', endPoint(SiteMapController.getSiteMapXml));
+router.get('/images/:uuid', endPoint(ImageController.getImageByUuid));
 
 router.use(express.static(path.resolve(cwd, 'public')));
 
@@ -151,7 +146,7 @@ router.get('/404', (req, res, next) => {
 });
 
 router.use((error, req, res, next) => {
-  console.log(error);
+  console.error(error);
   res.status(500).send('');
 });
 
