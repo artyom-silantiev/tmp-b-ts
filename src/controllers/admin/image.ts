@@ -13,22 +13,26 @@ export async function getFetchList (req: Request, res: Response) {
     .setSortOptions(['id', 'sha256', 'createdAt'])
     .init();
 
-  const rowsQueryParts = [{
+  const rowsQuery = [{
     skip: grid.skip,
     take: grid.take
   }] as any[];
-  let totalCountQueryParts = [{}] as any[];
+  let totalCountQuery = [{}] as any[];
+
+  const part = {};
+  rowsQuery.push(part);
+  totalCountQuery.push(part);
 
   if (grid.sortBy) {
-    rowsQueryParts.push({
+    rowsQuery.push({
       orderBy: {
         [grid.sortBy]: grid.sortDesc ? 'desc' : 'asc'
       }
     });
   }
 
-  const rows = await prisma.image.findMany(_.merge(rowsQueryParts));
-  const rowsCount = await prisma.image.count(_.merge(totalCountQueryParts));
+  const rows = await prisma.image.findMany(_.merge.apply(null, rowsQuery));
+  const rowsCount = await prisma.image.count(_.merge.apply(null, totalCountQuery));
 
   res.json({
     page: grid.page,

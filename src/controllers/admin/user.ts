@@ -24,10 +24,13 @@ export async function getFetchList (req: Request, res: Response) {
     take: grid.take,
     include: {
       Avatar: true
-    },
-    where: {}
+    }
   }] as any[];
   const totalCountQuery = [{}] as any[];
+
+  const part = {};
+  rowsQueryParts.push(part);
+  totalCountQuery.push(part);
 
   if (grid.sortBy) {
     rowsQueryParts.push({
@@ -86,8 +89,8 @@ export async function getFetchList (req: Request, res: Response) {
     totalCountQuery.push(part);
   }
 
-  const rows = await prisma.user.findMany(_.merge(rowsQueryParts));
-  const totalRows = await prisma.user.count(_.merge(rowsQueryParts));
+  const rows = await prisma.user.findMany(_.merge.apply(null, rowsQueryParts));
+  const totalRows = await prisma.user.count(_.merge.apply(null, totalCountQuery));
 
   res.json({
     page: grid.page,

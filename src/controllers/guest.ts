@@ -261,7 +261,5 @@ export async function resetPassword (req: Request, res: Response) {
     }
   }
 
-  res
-    .status(422)
-    .json(Validator.singleError('resetPasswordCode', 'fieldInvalid'));
+  res.status(400).json(Validator.singleError('resetPasswordCode', 'fieldInvalid'));
 }
