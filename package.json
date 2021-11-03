@@ -33,7 +33,7 @@
     "sharp": "^0.28.1",
     "sitemap": "^6.4.0",
     "tslib": "^1.13.0",
-    "validator": "^13.6.0"
+    "validator": "^13.7.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",
